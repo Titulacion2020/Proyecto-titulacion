@@ -1,3 +1,4 @@
+import { FcmService } from './../fcm/fcm.service';
 import { UserInterface } from './../../models/user-model';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -21,17 +22,33 @@ export class AuthService {
   private UserCollection: AngularFirestoreCollection<UserInterface>;
   private User: Observable<UserInterface[]>;
   private UserDoc: AngularFirestoreDocument<UserInterface>;
+  arrayUsuarios = [];
 
   constructor(
     private AFauth: AngularFireAuth,
     private readonly af: AngularFirestore,
-    private storage: AngularFireStorage
-  ) { }
+    private storage: AngularFireStorage,
+    private fcmService: FcmService
+  ) {
+    this.UserCollection = af.collection<UserInterface>('Users',  ref => ref.orderBy('nombre', 'asc'));
+    this.User = this.UserCollection.valueChanges();
+    this.User.subscribe(list => {
+      this.arrayUsuarios = list.map(item => {
+        return {
+          id: item.id,
+          nombre: item.nombre,
+          cedula: item.cedula,
+          email: item.email
+        };
+      });
+    });
+  }
 
   login(email: string, password: string) {
     return new Promise((resolve, reject) => {
-      this.AFauth.auth.signInWithEmailAndPassword(email, password)
-      .then(userData => { resolve(userData);
+      this.AFauth.auth.signInWithEmailAndPassword(email, password).then(userData => {
+        this.fcmService.getPermission(userData.user.uid);
+        resolve(userData);
       }).catch(err => reject(err));
     });
   }
@@ -137,8 +154,8 @@ export class AuthService {
       { nombre: 'Seguros' },
       { nombre: 'Reportes' },
       { nombre: 'perfil' }
-  
-     
+
+
     ];
     let vistasSecretaria = [
       { nombre: 'Pacientes' },
@@ -148,7 +165,7 @@ export class AuthService {
       { nombre: 'Pagos' },
       { nombre: 'Solicitudes' },
       { nombre: 'perfil' }
-    
+
     ];
     if (rol === 'administrador' ) {
       for (let vistasAdministradorKey in vistasAdministrador) {
@@ -181,14 +198,14 @@ export class AuthService {
               resolve('1');//true
              } else {
               resolve('0');//false
-             }  
+             }
           }
           if(isSecret) {
              if (this.verificarPerfil(vista,'secretaria')) {
               resolve('1');
              } else {
               resolve('0');
-             }            
+             }
           }
         });
       } else {

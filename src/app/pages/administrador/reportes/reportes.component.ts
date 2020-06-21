@@ -11,11 +11,9 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 import { Observable } from 'rxjs';
 import { TratamientoService } from 'src/app/services/tratamiento/tratamiento.service';
 import { startWith, map } from 'rxjs/operators';
-import { TratamientoMInterface } from 'src/app/models/tratamiento.model';
-import { PagosInterface } from 'src/app/models/pago-model';
 import { PacienteInterface } from 'src/app/models/paciente-model';
 import { PacienteService } from 'src/app/services/paciente/paciente.service';
-import * as CanvasJS from 'src/assets/canvasjs.min.js';
+
 
 @Component({
   selector: 'app-reportes',
@@ -43,6 +41,9 @@ export class ReportesComponent implements OnInit {
     cedulaPaciente : '',
     nombrePaciente: '',
     seguro: '',
+    fechaCita: '',
+    odontologo: '',
+    especialidad: ''
   };
 
   arrayPacientes = [];
@@ -51,6 +52,8 @@ export class ReportesComponent implements OnInit {
     cedulaOdontologo : '',
     nombreOdontologo: '',
     especialidad: '',
+    fechaCitaO: '',
+    namepaciente: ''
   };
 
   arrayOdontologos = [];
@@ -61,6 +64,8 @@ export class ReportesComponent implements OnInit {
   existRegistros: boolean;
   selectRegistros: boolean;
   subscription: Subscription;
+
+ 
 
   filteredOptions: Observable<string[]>;
   pagosArray = [];
@@ -81,51 +86,10 @@ export class ReportesComponent implements OnInit {
     
   }
 
-  generateGraphBar(data,title){
-    let chart = new CanvasJS.Chart("chartContainer", {
-      animationEnabled: false,
-      exportEnabled: true,
-      title: {
-        text: title
-      },
-      data: [{
-        type: "column",
-        dataPoints: data
-      }]
-    });
-    chart.render();
-	let img = chart.exportChart({toDataURL: true, format: "jpg"});
-  let dataimg =img.replace(/^data:image\/(png|jpg);base64,/, "");
-	this.imgurl = dataimg;
-  }
-
-  generatePie(data,title){
-
-    let chart = new CanvasJS.Chart("chartContainer", {
-      theme: "light2",
-      animationEnabled: false,
-      exportEnabled: true,
-      title:{
-        text: title
-      },
-      data: [{
-        type: "pie",
-        showInLegend: true,
-        toolTipContent: "<b>{name}</b>: ${y} (#percent%)",
-        indexLabel: "{name} - #percent%",
-        dataPoints: data
-      }]
-    });      
-    chart.render();
-	let img = chart.exportChart({toDataURL: true, format: "jpg"});
-    let dataimg =img.replace(/^data:image\/(png|jpg);base64,/, "");
-	this.imgurl = dataimg;
-  }
-  
-
   cambiarTipoReporte(event : any){
     this.existRegistros = false;
     this.selectRegistros  = true;
+   
     this.tipoRep = event; 
     if(this.tipoRep === 'Pagos por paciente'){
       this.listarAllPagos();
@@ -214,7 +178,7 @@ export class ReportesComponent implements OnInit {
   }
 
   reportPagos() {
-    this.displayedColumns =  ['numero', 'fechaPago', 'cedulaPaciente', 'nombrePaciente', 'asuntoPago', 'valorPago'];
+    this.displayedColumns =  ['numero', 'fechaPago', 'cedulaPaciente', 'nombrePaciente', 'asuntoPago', 'valorPagar'];
     this.pagoService.getPagosToReport(this.fechaIni, this.fechaFin).subscribe(res => {
       if (Object.keys(res).length === 0 ) {
         this.existRegistros = false;
@@ -232,70 +196,52 @@ export class ReportesComponent implements OnInit {
 
         for(let i = 0; i < this.dataSource.data.length; i++){
           var nombre= `${this.dataSource.data[i]['nombrePaciente']}`
-          var pago= this.dataSource.data[i]['valorPago']
+          var pago= this.dataSource.data[i]['valorPagar']
           data.push({y:Number.parseInt(pago),name:nombre});
-        }         
-        this.generatePie(data,"Reporte de pagos generales");
+        }        
       }
     });    
   }
 
- async calculateinfoPagosPaciente(res)
-  {
-    const pagoservice = this.pagoService;
-    for (let i = 0; i < res.length; i++) {
-      let totalPagado = 0;
-      let totalAPagar = 0;
-      const element = this.dataSource.data[i];
-      this.dataSource.data[i]['id'] = '';
-      this.dataSource.data[i]['fecha'] = this.pagoService.formatDate(new Date(element['fecha']));
-
-      pagoservice.getAllPagosByParams(res[i].seguro,res[i].tratamiento,res[i].cipaciente).subscribe(pago => {
-        if(pago!=null &&  pago.length>0){          
-           totalPagado = pago.reduce((acc, pago) => acc + pago.valorPago, 0);
-           totalAPagar =  res[i].precio - totalPagado;               
-           this.dataSource.data[i]['valorCancelado'] = totalPagado;
-           this.dataSource.data[i]['valorPendiente'] = totalAPagar;
-        }else{
-          this.dataSource.data[i]['valorCancelado'] = totalPagado;
-          this.dataSource.data[i]['valorPendiente'] = res[i].precio;
-        }
-        let data = [];
-        for(let i = 0; i < this.dataSource.data.length; i++){
-          var nombre= `${this.dataSource.data[i]['fecha']}`
-          var pagos= this.dataSource.data[i]['valorPendiente']
-          data.push({y:Number.parseInt(pagos),label:nombre});
-        }
-        this.generateGraphBar(data,"Reporte de pagos por paciente");
-      });         
-    }
-  }
 
   reportPagosPacientes(){
     
-    this.displayedColumns =  ['numero', 'fecha', 'tratamiento','valorCancelado','valorPendiente'];
-    this.tratamientoService.getTratamientosPacienteToReport(this.fechaIni, this.fechaFin,this.cedulaSelected).subscribe(async res => {
+    this.displayedColumns =  ['numero', 'fechaPago', 'tratamiento','valorPagar','valorPendiente'];
+    this.pagoService.getPagosPacienteToReport(this.fechaIni, this.fechaFin,this.cedulaSelected).subscribe(res => {
       if (Object.keys(res).length === 0 ) {
         this.existRegistros = false;
         this.selectRegistros  = false;
       } else {
         this.existRegistros = true;
         this.dataSource.data = Object.assign([],res);
-        
-        await this.calculateinfoPagosPaciente(res);
+        for (let i = 0; i < res.length; i++) {
+          const element = this.dataSource.data[i];
+          delete this.dataSource.data[i]['id'];
+          this.dataSource.data[i]['fechaPago'] = this.pagoService.formatDate(new Date(element['fechaPago']));
+        }
+        let data = [];
+        for(let i = 0; i < this.dataSource.data.length; i++){
+          var nombre= `${this.dataSource.data[i]['fecha']}`
+          var Valorpendiente= this.dataSource.data[i]['valorPendiente']
+          data.push({y:Number.parseInt(Valorpendiente),label:nombre});
+        }
       }
     }); 
     
   }
 
-reportPacientes() {
-   this.arrayPacientes = [];
-   this.newArrayP = {
-    cedulaPaciente : '',
-    nombrePaciente: '',
-    seguro: '',
-   };
-   this.displayedColumns =  ['numero', 'cedulaPaciente', 'nombrePaciente', 'seguro', 'numeroCitas'];
+  reportPacientes() {
+    this.arrayPacientes = [];
+    this.newArrayP = {
+     cedulaPaciente : '',
+     nombrePaciente: '',
+     seguro: '',
+     fechaCita: '',
+     odontologo: '',
+     especialidad: ''
+    };
+
+   this.displayedColumns =  ['numero','fechaCita', 'cedulaPaciente', 'nombrePaciente', 'seguro', 'odontologo','especialidad', 'numeroCitas'];
    this.citasService.getCitasbyDate(this.fechaIni, this.fechaFin).subscribe(res => {
     if (Object.keys(res).length === 0 ) {
       this.existRegistros = false;
@@ -311,7 +257,10 @@ reportPacientes() {
         this.newArrayP = {
           cedulaPaciente : unicosReg[i].cipaciente,
           nombrePaciente : unicosReg[i].namepaciente,
-          seguro: unicosReg[i].seguro
+          seguro: unicosReg[i].seguro,
+          fechaCita: unicosReg[i].fecha, 
+          odontologo: unicosReg[i].nameodontologo,
+          especialidad: unicosReg[i].especialidad
         };
         this.arrayPacientes.push(this.newArrayP);
       }
@@ -329,13 +278,13 @@ reportPacientes() {
 
 		  let data = [];
 		  for(let i = 0; i < this.dataSource.data.length; i++){
+      const element = this.dataSource.data[i];
+      this.dataSource.data[i]['fechaCita'] = this.reportService.formatDate(new Date(element['fechaCita']));
 			var nombre= `${this.dataSource.data[i]['nombrePaciente']}`
 			var citas= this.dataSource.data[i]['numeroCitas']
 			data.push({y:Number.parseInt(citas),label:nombre});
 		  }
-		  this.generateGraphBar(data,"Reporte de Pacientes atendidos");
-		   
-		   
+		   		   
         });
       });
 
@@ -344,13 +293,15 @@ reportPacientes() {
   }
 
   reportOdontologos() {
-   this.arrayOdontologos = [];
-   this.newArrayO = {
-    cedulaOdontologo : '',
-    nombreOdontologo: '',
-    especialidad: '',
-   };
-   this.displayedColumns =  ['numero', 'cedulaOdontologo', 'nombreOdontologo', 'especialidad','numeroCitas'];
+    this.arrayOdontologos = [];
+    this.newArrayO = {
+     cedulaOdontologo : '',
+     nombreOdontologo: '',
+     especialidad: '',
+     fechaCitaO: '',
+     namepaciente: ''
+    };
+   this.displayedColumns =  ['numero', 'fechaCitaO', 'cedulaOdontologo', 'nombreOdontologo', 'namepaciente', 'especialidad','numeroCitas'];
    this.citasService.getCitasbyDate(this.fechaIni, this.fechaFin).subscribe(res => {
     if (Object.keys(res).length === 0 ) {
       this.existRegistros = false;
@@ -366,7 +317,9 @@ reportPacientes() {
         this.newArrayO = {
           cedulaOdontologo : unicosReg[i].odontologo,
           nombreOdontologo : unicosReg[i].nameodontologo,
-          especialidad: unicosReg[i].especialidad
+          especialidad: unicosReg[i].especialidad,
+          fechaCitaO: unicosReg[i].fecha,
+          namepaciente: unicosReg[i].namepaciente
         };
         this.arrayOdontologos.push(this.newArrayO);
       }
@@ -388,15 +341,12 @@ reportPacientes() {
 		   let data = [];
 
 		  for(let i = 0; i < this.dataSource.data.length; i++){
+      const element = this.dataSource.data[i];
+      this.dataSource.data[i]['fechaCitaO'] = this.reportService.formatDate(new Date(element['fechaCitaO']));
 			var nombre= `${this.dataSource.data[i]['nombreOdontologo']}`
 			var citas= this.dataSource.data[i]['numeroCitas']
 			data.push({y:Number.parseInt(citas),label:nombre});
 		  }         
-
-			this.generateGraphBar(data,"Reporte de Citas por Odontologos");
-		  
-		  
-		  
         });
       });    
 
@@ -437,9 +387,9 @@ reportPacientes() {
 
     for(let i = 0; i < this.dataSource.data.length; i++){
       var num = `${i+1}`;
-      var cedul= `${this.dataSource.data[i]['fecha']}`;
+      var cedul= `${this.dataSource.data[i]['fechaPago']}`;
       var trata= `${this.dataSource.data[i]['tratamiento']}`
-      var valcan = "$"+`${this.dataSource.data[i]['valorCancelado']}`;
+      var valcan = "$"+`${this.dataSource.data[i]['valorPagar']}`;
       var valpen = "$"+`${this.dataSource.data[i]['valorPendiente']}`;
   
       let data = new Array(num,cedul,trata,valcan,valpen);
@@ -454,11 +404,11 @@ reportPacientes() {
     let fecha  = this.pagoService.formatDate(date);
     let pacientes = {cedula:pacient.cedula,telefono:pacient.telefono, email:pacient.email, nombre:pacient.nombre};
 
-    this.reportService.exportToPdfPacientes(headers,body, 'pagosPacienteReport','Reporte de Pagos por Pacientes',pacientes, this.imgurl,fecha);
+    this.reportService.exportToPdfPacientes(headers,body, 'pagosPacienteReport','Reporte de Pagos por Pacientes',pacientes,fecha);
   }  
 
   exportTablePagos() {
-
+      
   let headers = ['No', 'Fecha Pago', 'CI. Paciente', 'Nombre Paciente','Asunto','Valor Pago']
   let body = [];
   
@@ -473,7 +423,7 @@ reportPacientes() {
     let data = new Array(num,fech,cedul,nombre,trata,"$"+valor);
     body.push(data);
   }
-    this.reportService.exportToPdf(headers,body, 'pagosReport','Reporte de Pagos Generales', this.imgurl);
+    this.reportService.exportToPdf(headers,body, 'pagosReport','Reporte de Pagos Generales');
   }
 
   exportTablePacientes() {
@@ -491,7 +441,7 @@ reportPacientes() {
        let data = new Array(num,cedul,nombre,seguro,citas);
        body.push(data);
      }
-    this.reportService.exportToPdf(headers,body,'pacientesReport', 'Reporte de Pacientes atendidos', this.imgurl);
+    this.reportService.exportToPdf(headers,body,'pacientesReport', 'Reporte de Pacientes atendidos');
   }
 
   exportTableOdontologos() {
@@ -510,7 +460,7 @@ reportPacientes() {
        body.push(data);
      }
 
-    this.reportService.exportToPdf(headers,body, 'odontologosReport', 'Reporte de Citas por Odontologos', this.imgurl);    
+    this.reportService.exportToPdf(headers,body, 'odontologosReport', 'Reporte de Citas por Odontologos');    
   }
 
   getErrorMsgTipo() {

@@ -28,27 +28,13 @@ export class AprobarEliminarComponent implements OnInit {
     }
 
   ngOnInit() {
-    this.citaMService.getAllCitas().subscribe(rest => {
-      const cedula = this.pacienteService.pacienteSelectedBorrar.cedula;
-      this.citasFiltradas = rest.filter(datosCitas=>datosCitas.cipaciente === cedula ); 
-      if(this.citasFiltradas.length>0){    
-        this.mensajePaciente ='El paciente tiene citas medicas registradas en el sistema \nsi elimina al paciente se eliminaran sus citas medicas también';
-      }else{
-        this.mensajePaciente= "";
-      }
-    }, error => {
-      throw error;
-    });
+ 
   }
  
-
-  borrarPaciente(){
-    this.citasFiltradas.forEach(datos=>{
-      this.citaMService.deleteCitaM(datos);
-    });
-    this.pacienteService.deletePaciente(this.pacienteService.pacienteSelectedBorrar);
-        this.toastmsg.success('Registro eliminado exitosamente', 'MENSAJE');
-        this.dialogRef.close();
+    borrarPaciente(){
+      this.pacienteService.deletePaciente(this.pacienteService.pacienteSelectedBorrar);
+      this.toastmsg.success('Registro eliminado exitosamente', 'MENSAJE');
+      this.dialogRef.close();
     }
 
   close(): void {

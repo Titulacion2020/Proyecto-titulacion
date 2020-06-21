@@ -17,6 +17,7 @@ export class EditEspecialidadComponent implements OnInit {
   especialidadForm = new FormGroup({
     id: new FormControl(null),
     nombre: new FormControl('', Validators.required),
+    descripcion: new FormControl('', Validators.required)
   });
 
   constructor(
@@ -30,6 +31,7 @@ export class EditEspecialidadComponent implements OnInit {
   ngOnInit() {
     this.especialidadForm.get('id').setValue(this.espeService.espeSelected.id);
     this.especialidadForm.get('nombre').setValue(this.espeService.espeSelected.nombre);
+    this.especialidadForm.get('descripcion').setValue(this.espeService.espeSelected.descripcion);
   }
 
   onSaveEspe(data: EspecialidadInterface) {
@@ -53,5 +55,7 @@ export class EditEspecialidadComponent implements OnInit {
     return  this.especialidadForm.get('nombre').hasError('required') ? 'Campo obligatorio' :
             '';
   }
-
+  msgValidateDescription() {
+    return  this.especialidadForm.get('descripcion').hasError('required') ? 'Campo obligatorio' : '';
+  }
 }

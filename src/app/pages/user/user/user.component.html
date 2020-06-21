@@ -3,18 +3,22 @@
 </div>
 <mat-toolbar color="Primary-grey">
     <div *ngIf="this.isAdmin == true">
-        <a mat-button routerLink="/perfil" routerLinkActive="active">
+        <a mat-raised-button color="Primary-grey" routerLink="/perfil" routerLinkActive="active">
             <mat-icon>account_circle</mat-icon>Perfil Administrador
         </a>
     </div>
 
     <div *ngIf="this.isSecret == true">
-        <a mat-button routerLink="/perfil" routerLinkActive="active">
+        <a mat-raised-button color="Primary-grey" routerLink="/perfil" routerLinkActive="active">
             <mat-icon>account_circle</mat-icon>Perfil Secretaria
         </a>
     </div>
 
     <div class="spacer"></div>
+
+    <div *ngIf="this.isSecret == true">
+        <a mat-raised-button color="Primary-grey" (click)="validateDataNotifications()"><mat-icon>notification_important</mat-icon>Notificar Odontólogos</a>
+    </div>
 
     <div>
         <a mat-button (click)="onLogout()">Cerrar Sesión</a>
@@ -31,9 +35,11 @@
     <div *ngIf="this.isSecret == true">
 
         <a mat-button routerLink="/pacientes" routerLinkActive="active">Pacientes</a>
-        <button mat-button [matMenuTriggerFor]="belowMenu" routerLink="/citasRegistradas" routerLinkActive="active">Citas Medicas</button>
-        <mat-menu #belowMenu="matMenu" yPosition="below">
-            <button mat-button routerLink="/citas" routerLinkActive="active">Registrar citas</button>
+        <button mat-button [matMenuTriggerFor]="menu">Citas Médicas</button>
+        <mat-menu #menu="matMenu">
+            <button mat-button routerLink="/citasRegistradas">Citas para hoy</button>
+            <br>
+            <button mat-button routerLink="/citas">Registrar citas</button>
         </mat-menu>
         <a mat-button routerLink="/tratamientos" routerLinkActive="active">Tratamientos</a>
         <a mat-button routerLink="/pagos" routerLinkActive="active">Pagos</a>

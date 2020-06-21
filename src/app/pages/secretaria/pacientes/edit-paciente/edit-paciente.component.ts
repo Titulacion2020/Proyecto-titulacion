@@ -1,3 +1,4 @@
+import { AuthService } from 'src/app/services/auth/auth.service';
 import { PacienteInterface } from './../../../../models/paciente-model';
 import { PacienteService } from './../../../../services/paciente/paciente.service';
 import { FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
@@ -21,13 +22,14 @@ export class EditPacienteComponent implements OnInit {
   // tslint:disable-next-line: max-line-length
   emailPattern: any = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,4}))$/;
 
+  email = '';
   pacienteForm = new FormGroup({
     id: new FormControl(null),
     seguro: new FormControl('', Validators.required),
     nombre: new FormControl('', Validators.required),
     hClinica: new FormControl(''),
     cedula: new FormControl('', [Validators.required, Validators.minLength(10)]),
-    telefono: new FormControl(''),
+    telefono: new FormControl('', Validators.required),
     email: new FormControl('', [Validators.required, Validators.pattern(this.emailPattern)]),
     foto: new FormControl(''),
     rol: new FormGroup({
@@ -37,10 +39,11 @@ export class EditPacienteComponent implements OnInit {
 
   constructor(
     private toastr: ToastrService,
-    public segService: SeguroService,    
+    public segService: SeguroService,
     public odontoService: OdontologoService,
     public pacientService: PacienteService,
     private dialogRef: MatDialogRef<EditPacienteComponent>,
+    private userService: AuthService
   ) {
     dialogRef.disableClose = true;
   }
@@ -49,39 +52,44 @@ export class EditPacienteComponent implements OnInit {
     this.fillPaciente();
   }
 
-  validateCedula(){
+  validateCedula() {
     const cedula = this.pacienteForm.get('cedula').value;
-    const existeCedOdont = this.odontoService.arrayOdontologos.find(data=>data.cedula===cedula);
-    const existeCedPacient =  this.pacientService.arrayPacientes.find(paciente => paciente.cedula === cedula);
+    const existeCedOdont = this.odontoService.arrayOdontologos.find(data => data.cedula === cedula);
+    const existeCedPacient = this.pacientService.arrayPacientes.find(paciente => paciente.cedula === cedula);
+    const existeCedUser = this.userService.arrayUsuarios.find(user => user.cedula === cedula);
     const cedulaOld = this.pacientService.pacienteSelected.cedula;
 
-    if(cedulaOld!==cedula && existeCedOdont){
-      this.pacienteForm.get('cedula').setErrors({repeatOdonto:true})
-      this.toastr.warning('La cedula escrita pertenece a un odontologo', 'MENSAJE');
-    }else if(cedulaOld!==cedula && existeCedPacient){
-      this.pacienteForm.get('cedula').setErrors({repeatCedPaciente:true})
-      this.toastr.warning('La cedula escrita pertenece a un paciente', 'MENSAJE');
-    }    
+    if ((cedulaOld !== cedula && existeCedOdont) || existeCedPacient || existeCedUser) {
+      this.pacienteForm.get('cedula').setErrors({ repeatOdonto: true });
+      this.toastr.warning('El número de cédula ya se encuentra registrado, vuelva a intentar', 'MENSAJE');
+    }
   }
 
-  validateEmail(){
-    const email = this.pacienteForm.get('email').value;
+  validateEmail() {
+    this.email = this.pacienteForm.get('email').value;
+    this.email = this.email.toLowerCase();
     const emailOld = this.pacientService.pacienteSelected.email;
-    const existeEmailOdont = this.odontoService.arrayOdontologos.find(data=>data.email===email);
-    const existeEmailPacient =  this.pacientService.arrayPacientes.find(paciente => paciente.email === email);
-    const existeEmailSeguro =  this.segService.arraySeguros.find(seguro => seguro.email === email);
+    const existeEmailOdont = this.odontoService.arrayOdontologos.find(data => data.email === this.email);
+    const existeEmailPacient = this.pacientService.arrayPacientes.find(paciente => paciente.email === this.email);
+    const existeEmailSeguro = this.segService.arraySeguros.find(seguro => seguro.email === this.email);
+    const existeEmailUser = this.userService.arrayUsuarios.find(user => user.email === this.email);
 
-    if(emailOld!==email && existeEmailOdont){
-      this.pacienteForm.get('email').setErrors({repeatEmailOdonto:true})
-      this.toastr.warning('El email escrito pertenece a un odontologo', 'MENSAJE');
-    }else if(emailOld!==email && existeEmailPacient){
-      this.pacienteForm.get('email').setErrors({repeatEmailPaciente:true})
-      this.toastr.warning('El email escrito pertenece a un paciente', 'MENSAJE');
-    }else if(emailOld!==email && existeEmailSeguro){
-      this.pacienteForm.get('email').setErrors({repeatEmailSeguro:true})
-      this.toastr.warning('El email escrito pertenece a un seguro', 'MENSAJE');
-    }   
+    if ((emailOld !== this.email && existeEmailOdont) || existeEmailPacient || existeEmailSeguro || existeEmailUser) {
+      this.pacienteForm.get('email').setErrors({ repeatEmailOdonto: true });
+      this.toastr.warning('El email ya se encuentra registrado, vuelva a intentar', 'MENSAJE');
+    }
   }
+
+  validarHC() {
+    const historiaC = this.pacienteForm.get('hClinica').value;
+    const historiaCOld = this.pacientService.pacienteSelected.hClinica;
+    const existehistoriaC = this.pacientService.arrayPacientes.find(pacientFilterbyHC => pacientFilterbyHC.hClinica === historiaC)
+    if ((historiaCOld !== historiaC) && existehistoriaC && (existehistoriaC.hClinica !== '')) {
+      this.pacienteForm.get('hClinica').setErrors({ repeathClinica: true });
+      this.toastr.warning('El número de historia clínica ya existe', 'MENSAJE');
+    }
+  }
+
 
   fillPaciente() {
     this.pacienteForm.get('id').setValue(this.pacientService.pacienteSelected.id);
@@ -99,31 +107,10 @@ export class EditPacienteComponent implements OnInit {
     data.rol.paciente = true;
     data.email = data.email.toLowerCase();
 
-    const pacientFilteredC = this.pacientService.arrayPacientes.find(
-      pacientFilterbycedula => pacientFilterbycedula.cedula === data.cedula);
-    const pacientFilteredE = this.pacientService.arrayPacientes.find(
-      pacientFilterbyemail => pacientFilterbyemail.email === data.email);
-    const pacientFilteredHC = this.pacientService.arrayPacientes.find(
-      pacientFilterbyHC => pacientFilterbyHC.hClinica === data.hClinica);
+    this.pacientService.updatePaciente(data);
+    this.toastr.success('Registro actualizado exitosamente', 'MENSAJE');
+    this.close();
 
-      this.validateCedula();
-
-    if ((pacientFilteredC === undefined) || (data.cedula === this.pacientService.pacienteSelected.cedula)) {
-      if ((pacientFilteredE === undefined) || (data.email === this.pacientService.pacienteSelected.email)) {
-        if ((pacientFilteredHC === undefined) || (data.hClinica === this.pacientService.pacienteSelected.hClinica)
-            || (data.hClinica === '')) {
-          this.pacientService.updatePaciente(data);
-          this.toastr.success('Registro actualizado exitosamente', 'MENSAJE');
-          this.close();
-        } else {
-          this.toastr.warning('El número de historia clínica ya existe', 'MENSAJE');
-        }
-      } else {
-        this.toastr.warning('El email ya se encuentra registrado', 'MENSAJE');
-      }
-    } else {
-      this.toastr.warning('El número de cédula ya se encuentra registrado', 'MENSAJE');
-    }
   }
 
   close(): void {
@@ -131,31 +118,34 @@ export class EditPacienteComponent implements OnInit {
   }
 
   check(event: KeyboardEvent) {
-    // tslint:disable-next-line: deprecation
-    if (event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/;
+    if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
       event.preventDefault();
     }
   }
 
   getErrorMessageE() {
     return this.pacienteForm.get('email').hasError('pattern') ? 'Correo electrónico invalido' :
-    this.pacienteForm.get('email').hasError('required') ? 'Campo Requerido' :
-    this.pacienteForm.get('email').hasError('repeatEmailOdonto') ? 'El email escrito pertenece a un odontologo' :
-    this.pacienteForm.get('email').hasError('repeatEmailPaciente') ? 'El email escrito pertenece a un paciente' :
-    this.pacienteForm.get('email').hasError('repeatEmailSeguro') ? 'El email escrito pertenece a un seguro' :
-      '';
+      this.pacienteForm.get('email').hasError('required') ? 'Campo Requerido' :
+        this.pacienteForm.get('email').hasError('repeatEmailOdonto') ? 'El email ya se encuentra registrado' :
+          '';
   }
 
   getErrorMessageN() {
-    return  this.pacienteForm.get('nombre').hasError('required') ? 'Campo obligatorio' : '';
+    return this.pacienteForm.get('nombre').hasError('required') ? 'Campo obligatorio' : '';
+  }
+  getErrorMessageT() {
+    return this.pacienteForm.get('telefono').hasError('required') ? 'Campo obligatorio' : '';
   }
 
   getErrorMessageC() {
-    return  this.pacienteForm.get('cedula').hasError('required') ? 'Campo obligatorio' :
-            this.pacienteForm.get('cedula').hasError('minlength') ? 'La cédula debe tener 10 digitos' :
-            this.pacienteForm.get('cedula').hasError('repeatOdonto') ? 'La cédula escrita pertenece a un odontologo' :
-            this.pacienteForm.get('cedula').hasError('repeatCedPaciente') ? 'La cédula escrita pertenece a un paciente' :
-    '';
+    return this.pacienteForm.get('cedula').hasError('required') ? 'Campo obligatorio' :
+      this.pacienteForm.get('cedula').hasError('minlength') ? 'La cédula debe tener 10 digitos' :
+        this.pacienteForm.get('cedula').hasError('repeatOdonto') ? 'La cédula ya se encuentra registrada' :
+            '';
+  }
+  getErrorMessageHC() {
+    return this.pacienteForm.get('hClinica').hasError('repeathClinica') ? 'El N° de Historia Clínica ya existe' : '';
   }
 
 }

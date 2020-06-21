@@ -11,4 +11,5 @@ export interface PacienteInterface {
   seguro?: string;
   foto?: string;
   rol?: Roles;
+  token?: string;
 }

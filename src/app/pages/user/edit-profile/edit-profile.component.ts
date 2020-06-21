@@ -45,27 +45,35 @@ export class EditProfileComponent implements OnInit {
     this.imageUrl = this.authService.userSelected.imagen;
   }
 
-  uploadFile(event) {
-    const reader = new FileReader(); // HTML5 FileReader API
-    this.file = event.target.files[0];
-    reader.readAsDataURL(this.file);
-    reader.onload = () => {
+  uploadFile(event: any) {
+    if (event.target.files[0]) {
+      const file: File = event.target.files[0];
+      const pattern = /image-*/;
+      if (!file.type.match(pattern)) {
+        this.toastr.error('El formato de la imagen es incorrecto', 'MENSAJE');
+        return;
+      }
+      const reader = new FileReader(); // HTML5 FileReader API
+      this.file = event.target.files[0];
+      reader.readAsDataURL(this.file);
+      reader.onload = () => {
         this.imageUrl = reader.result;
-    };
+      };
+
+    }
   }
 
   editProfile(user: UserInterface) {
     user.id = this.authService.userSelected.id;
     user.email = this.authService.userSelected.email;
-    user.imagen = this.authService.userSelected.imagen;
 
-    if (this.file === user.imagen) {
-      this.authService.updateUser(user);
-      this.dialogRef.close();
+    if (this.imageUrl !== this.authService.userSelected.imagen) {
+      user.imagen = this.imageUrl;
     } else {
-      this.authService.updateUser(user, this.file);
-      this.dialogRef.close();
+      user.imagen = this.authService.userSelected.imagen;
     }
+    this.authService.updateUser(user);
+    this.dialogRef.close();
     this.toastr.success('Información actualizada exitosamente', 'MENSAJE');
   }
 
@@ -73,17 +81,16 @@ export class EditProfileComponent implements OnInit {
     this.dialogRef.close();
   }
 
-    // Funcion: permitir solo numeros
   check(event: KeyboardEvent) {
-  // tslint:disable-next-line: deprecation
-    if (event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
-      event.preventDefault();
-    }
-  }
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/; 
+     if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)){
+       event.preventDefault();
+     }
+   }
 
   msgValidateNombre() {
-    return  this.editBasicInfForm.get('nombre').hasError('required') ? 'Campo obligatorio' :
-            '';
+    return this.editBasicInfForm.get('nombre').hasError('required') ? 'Campo obligatorio' :
+      '';
   }
 
 }

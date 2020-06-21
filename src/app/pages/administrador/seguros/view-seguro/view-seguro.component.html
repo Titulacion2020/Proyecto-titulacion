@@ -12,14 +12,14 @@
         <mat-form-field class="inputWidth">
             <input matInput formControlName="nombre" placeholder="Nombre del Seguro medico" readonly>
         </mat-form-field>
-         &nbsp;&nbsp;
+         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <mat-form-field class="inputWidth">
             <input matInput formControlName="telefono" placeholder="Telefono" readonly>
         </mat-form-field>
         <br>
         <mat-form-field class="inputWidth">
             <input matInput formControlName="email" placeholder="Email" readonly>
-        </mat-form-field>&nbsp;&nbsp;
+        </mat-form-field>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <mat-form-field class="inputWidth">
             <input matInput formControlName="sitioweb" placeholder="Pagina web" readonly>
         </mat-form-field><br>
@@ -27,6 +27,8 @@
             <mat-label>Direccion</mat-label>
             <input matInput formControlName="direccion" placeholder="Direccion" class="form-control" readonly>
         </mat-form-field>
+        <br>
+        <a><b>Especialidades:</b></a>
         <br>
         <ul style="margin-left:40%;clear:both;">
             <li *ngFor="let especialidad of especialidades" style="display: block;">

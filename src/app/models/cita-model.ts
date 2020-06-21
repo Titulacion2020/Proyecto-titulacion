@@ -6,6 +6,7 @@ export interface CitaMInterface {
   namepaciente?: string;
   odontologo?: any;
   nameodontologo?: any;
+  telfPaciente?: any;
   especialidad?: string;
   seguro?: string;
   estado?: string;

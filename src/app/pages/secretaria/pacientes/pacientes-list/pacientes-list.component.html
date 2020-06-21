@@ -9,7 +9,7 @@
     <br>
     <div style="text-align: center;">
         <mat-form-field style="width: 50%;">
-            <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Busqueda del Paciente">
+            <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Búsqueda del Paciente">
         </mat-form-field>
         <i class="material-icons">search</i>
     </div>
@@ -23,7 +23,7 @@
                     <td mat-cell *matCellDef="let element; index as i"> {{i+1}} </td>
                 </ng-container>
                 <ng-container matColumnDef="hClinica">
-                    <th mat-header-cell *matHeaderCellDef> Historia Clinica </th>
+                    <th mat-header-cell *matHeaderCellDef> Historia Clínica </th>
                     <td mat-cell *matCellDef="let element"> {{element.hClinica}} </td>
                 </ng-container>
                 <ng-container matColumnDef="cedula">
@@ -44,10 +44,10 @@
                 </ng-container>
                 <ng-container matColumnDef="seguro">
                     <th mat-header-cell *matHeaderCellDef> Seguro </th>
-                    <td mat-cell *matCellDef="let element"> {{element.seguro}} </td>
+                    <td mat-cell *matCellDef="let element"> {{element.seguro  | titlecase}} </td>
                 </ng-container>
                 <ng-container matColumnDef="accion">
-                    <th mat-header-cell *matHeaderCellDef> Accion </th>
+                    <th mat-header-cell *matHeaderCellDef> Acción </th>
                     <td mat-cell *matCellDef="let element">
                         <button mat-flat-button class="button-edit" color="primary" (click)="onEdit(element)">
               Editar

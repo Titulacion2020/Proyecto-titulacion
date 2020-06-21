@@ -1,3 +1,4 @@
+import { FcmService } from 'src/app/services/fcm/fcm.service';
 import { OdontologoService } from './../../../../services/odontologo/odontologo.service';
 import { CitaService } from './../../../../services/cita/cita.service';
 import { PacienteService } from './../../../../services/paciente/paciente.service';
@@ -35,9 +36,9 @@ export class EditCitaComponent implements OnInit {
   dateSelected: Date;
   dentistselected: any;
   registeredMedicalAppointments: CitaMInterface[] = [];
-  citasFiltradas: CitaMInterface[];  
+  citasFiltradas: CitaMInterface[];
 
-
+  dataPaciente: PacienteInterface;
   // Lista de pacientes
   pacientList: any[] = [];
   // Lista odontologos
@@ -52,6 +53,7 @@ export class EditCitaComponent implements OnInit {
     public odontService: OdontologoService,
     private dialogRef: MatDialogRef<EditCitaComponent>,
     @Inject(LOCALE_ID) private locale: string,
+    private fcmService: FcmService
   ) {
     this.dateAdapter.setLocale('es');
     dialogRef.disableClose = true;
@@ -64,29 +66,26 @@ export class EditCitaComponent implements OnInit {
       seguro: new FormControl(''),
       namepaciente: new FormControl(''),
       especialidad: new FormControl('', Validators.required),
-      cipaciente: new FormControl('',  Validators.required),
-      odontologo: new FormControl('',  Validators.required),
-      hora: new FormControl('',  Validators.required),
-      fecha: new FormControl('',  Validators.required),
-      estado: new FormControl('',  Validators.required),
+      cipaciente: new FormControl('', Validators.required),
+      odontologo: new FormControl('', Validators.required),
+      telfPaciente: new FormControl('', Validators.required),
+      hora: new FormControl('', Validators.required),
+      fecha: new FormControl('', Validators.required),
+      estado: new FormControl('', Validators.required),
     });
 
-    this.especialidadSelect = this.getEspecialidades(); 
+    this.especialidadSelect = this.getEspecialidades();
     this.getPacientandDentistList();
     this.actualizo = false;
-    this.filteredOptions = this.CitaMform.get('cipaciente').valueChanges.pipe(
-      startWith(''),
-      map(value =>  value ? this._filter(value) : this.pactService.arrayPacientes.slice())
-    );
   }
 
-  getEspecialidades():any[]{
+  getEspecialidades(): any[] {
     let especiadidadesArray = [];
     this.odontService.arrayOdontologos.map((odont) => {
 
-      if(especiadidadesArray.length ==0 ){
+      if (especiadidadesArray.length == 0) {
         especiadidadesArray.push(odont.especialidad);
-      }else if(!especiadidadesArray.find(val=>val.trim() === odont.especialidad.trim())){
+      } else if (!especiadidadesArray.find(val => val.trim() === odont.especialidad.trim())) {
         especiadidadesArray.push(odont.especialidad);
       }
     });
@@ -95,12 +94,6 @@ export class EditCitaComponent implements OnInit {
 
   displayFn(subject) {
     return subject ? subject.cedula : undefined;
-  }
-
-  private _filter(value: any): string[] {
-    const filterValue = value;
-    this.setpacientvalue(value);
-    return this.pactService.arrayPacientes.filter(option => option.cedula.indexOf(filterValue) === 0);
   }
 
   getPacientandDentistList() {
@@ -118,8 +111,16 @@ export class EditCitaComponent implements OnInit {
 
   setDataCitaM() {
     const pacientfiltered = this.pacientList.find(search => search.cedula === this.citaMService.selectCitaM.cipaciente);
+    this.pactService.getUser_Token(this.citaMService.selectCitaM.cipaciente).subscribe(data => {
+      for (let paciente of data) {
+        this.dataPaciente = paciente;
+  }
+
+  });
     this.CitaMform.get('id').patchValue(this.citaMService.selectCitaM.id);
-    this.CitaMform.get('cipaciente').patchValue(pacientfiltered);
+    this.CitaMform.get('cipaciente').patchValue(this.citaMService.selectCitaM.cipaciente);
+    this.CitaMform.get('namepaciente').patchValue(this.citaMService.selectCitaM.namepaciente);
+    this.CitaMform.get('telfPaciente').patchValue(this.citaMService.selectCitaM.telfPaciente);
     const parts = this.citaMService.selectCitaM.fecha.split('/');
     const newdate = new Date(parts[2], (parts[1] - 1), parts[0]);
     this.CitaMform.get('fecha').patchValue(newdate);
@@ -131,10 +132,6 @@ export class EditCitaComponent implements OnInit {
     this.CitaMform.get('estado').patchValue(this.citaMService.selectCitaM.estado);
   }
 
-  setpacientvalue(value: any) {
-    this.CitaMform.get('namepaciente').patchValue(value.nombre);
-    this.CitaMform.get('seguro').patchValue(value.seguro);
-  }
 
   especialidad(val: any) {
     if (this.actualizo === false) {
@@ -154,14 +151,14 @@ export class EditCitaComponent implements OnInit {
     if (this.actualizo === false) {
       if (dentistselected) {
         const iddentist = dentistselected.cedula;
-        this.dentistselected =  dentistselected;
+        this.dentistselected = dentistselected;
         this.horariobyOdontologoList = [];
         this.cleanHourValue();
         if (this.dateSelected && this.specialtiesSelected) {
           const arrayFiltered = this.registeredMedicalAppointments.filter(
             appointmentsFiltered => appointmentsFiltered.odontologo === iddentist
-            && this.dateSelected.getTime() === appointmentsFiltered.fecha
-            && this.specialtiesSelected === appointmentsFiltered.especialidad
+              && this.dateSelected.getTime() === appointmentsFiltered.fecha
+              && this.specialtiesSelected === appointmentsFiltered.especialidad
           );
           const hoursbydentist: string[] = [];
           this.odontService.arrayOdontologos.forEach(dentisSelec => {
@@ -175,13 +172,13 @@ export class EditCitaComponent implements OnInit {
               });
             }
           });
-          this.horariobyOdontologoList = JSON.parse( JSON.stringify(hoursbydentist));
+          this.horariobyOdontologoList = JSON.parse(JSON.stringify(hoursbydentist));
           if (this.horariobyOdontologoList.length > 0 && arrayFiltered.length > 0) {
-            this.horariobyOdontologoList = JSON.parse( JSON.stringify( this.removeRegisteredHours(arrayFiltered,
+            this.horariobyOdontologoList = JSON.parse(JSON.stringify(this.removeRegisteredHours(arrayFiltered,
               this.horariobyOdontologoList, this.citaMService.selectCitaM.hora)));
           }
         }
-        if (this.dateSelected && this.specialtiesSelected && this.dentistselected ) {
+        if (this.dateSelected && this.specialtiesSelected && this.dentistselected) {
           if (!this.hourSelected) {
             if (this.horariobyOdontologoList.length === 0) {
               this.toastr.info('Citas no disponibles', 'MENSAJE');
@@ -260,64 +257,47 @@ export class EditCitaComponent implements OnInit {
     this.citasFiltradas = this.citaMService.citaArray;
   }
 
-  validarCitaMedicaRegistrada(event){
+  validarCitaMedicaRegistrada(event) {
 
-    const ci = this.CitaMform.get('cipaciente').value;
+    const cedula = this.CitaMform.get('cipaciente').value;
     const fecha = this.CitaMform.get('fecha').value;
     const fechaT = Date.parse(fecha);
     const hora = this.CitaMform.get('hora').value;
 
-    if(hora!==this.citaMService.selectCitaM.hora){      
-      const valores = this.citasFiltradas.find(datosCitas=>datosCitas.cipaciente === ci.cedula && datosCitas.fecha === fechaT && datosCitas.hora === hora); 
 
-      if(valores !== undefined){
-          this.CitaMform.get('hora').setErrors({repeatHora:true})
-          this.toastr.warning('El paciente ya tiene una cita medica registrada a esa hora', 'MENSAJE');  
+    if (hora !== this.citaMService.selectCitaM.hora) {
+      const valores = this.citasFiltradas.find(
+        datosCitas => datosCitas.cipaciente === cedula && datosCitas.fecha === fechaT && datosCitas.hora === hora);
+
+      if (valores !== undefined) {
+        this.CitaMform.get('hora').setErrors({ repeatHora: true })
+        this.toastr.warning('El paciente ya tiene una cita médica registrada a esa hora', 'MENSAJE');
       }
-    }   
+    }
   }
 
+
+
   guardarCitaMedica(data: CitaMInterface) {
-     const fecha = Date.parse(data.fecha);
+    const fecha = Date.parse(data.fecha);
     data.fecha = fecha;
     let newdata: CitaMInterface;
     newdata = data;
-    if (newdata.cipaciente ) {
-      if (this.existID_pacientList(newdata.cipaciente) === true) {
+    newdata.odontologo = newdata.odontologo.cedula;
+    newdata.nameodontologo = this.dentistselected.nombre;
 
-        newdata.cipaciente =  newdata.cipaciente.cedula;
-        newdata.odontologo =  newdata.odontologo.cedula;
-        newdata.nameodontologo = this.dentistselected.nombre;
-        this.citaMService.updateCitaM(newdata);
-        this.actualizo = true;
-        this.toastr.success('Registro actualizado con Exitoso', 'MENSAJE');
-        this.close();
-      } else {
-        this.toastr.error('El paciente  no se encuentra registrado', 'MENSAJE');
+    if (newdata.estado === 'agendada' || newdata.estado === 'confirmada') {
+      if (this.dataPaciente && this.dataPaciente.token) {
+        const msg = 'Su cita fué ' + newdata.estado + ' exitosamente.';
+        this.fcmService.sendPostRequest(msg, this.dataPaciente.token);
       }
-    } else {
-      console.log('el no se encuentra registrado');
     }
-  }
 
+    this.citaMService.updateCitaM(newdata);
+    this.actualizo = true;
+    this.toastr.success('Registro actualizado exitosamente', 'MENSAJE');
+    this.close();
 
-
-  existID_pacientList(cedula: any): boolean {
-
-    let exist = false;
-    if (cedula) {
-
-      const pacientFiltered = this.pactService.arrayPacientes.find(pacientFilterbycedula => pacientFilterbycedula.cedula === cedula.cedula);
-
-      if (pacientFiltered) {
-        exist = true;
-      } else {
-        exist = false;
-      }
-    } else {
-      exist = false;
-    }
-    return exist;
   }
 
 
@@ -325,34 +305,35 @@ export class EditCitaComponent implements OnInit {
     this.dialogRef.close();
   }
 
-  // Funcion: permitir solo numeros
   check(event: KeyboardEvent) {
-    // tslint:disable-next-line: deprecation
-    if (event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/;
+    if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
       event.preventDefault();
     }
   }
 
   getErrorMessageP() {
-    return  this.CitaMform.get('cipaciente').hasError('required') ? 'Seleccione el paciente' : '';
+    return this.CitaMform.get('cipaciente').hasError('required') ? 'Seleccione el paciente' : '';
   }
 
   getErrorMessageE() {
-    return  this.CitaMform.get('especialidad').hasError('required') ? 'Seleccione la especialidad' : '';
+    return this.CitaMform.get('especialidad').hasError('required') ? 'Seleccione la especialidad' : '';
   }
 
   getErrorMessageF() {
-    return  this.CitaMform.get('fecha').hasError('required') ? 'Fecha incorrecta' : '';
+    return this.CitaMform.get('fecha').hasError('required') ? 'Fecha incorrecta' : '';
   }
 
   getErrorMessageO() {
-    return  this.CitaMform.get('odontologo').hasError('required') ? 'Seleccione el odontologo' : '';
+    return this.CitaMform.get('odontologo').hasError('required') ? 'Seleccione el odontologo' : '';
   }
 
   getErrorMessageH() {
-    return  this.CitaMform.get('hora').hasError('required') ? 'Seleccione la hora de la cita' : '';
+    return this.CitaMform.get('hora').hasError('required') ? 'Seleccione la hora de la cita' :
+      this.CitaMform.get('hora').hasError('repeatHora') ? 'El paciente ya tiene una cita a esa hora' :
+        '';
   }
   getErrorMessageEst() {
-    return  this.CitaMform.get('estado').hasError('required') ? 'Seleccione el estado de la cita' : '';
+    return this.CitaMform.get('estado').hasError('required') ? 'Seleccione el estado de la cita' : '';
   }
 }

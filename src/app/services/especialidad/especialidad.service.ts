@@ -15,6 +15,7 @@ export class EspecialidadService {
   private Especialidad: Observable<EspecialidadInterface[]>;
 
   public espeSelected: EspecialidadInterface = {};
+  public espeSelectedBorrar: EspecialidadInterface;
 
   public isEdit: boolean;
   public isNew: boolean;

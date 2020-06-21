@@ -15,11 +15,13 @@ export class CitaService {
   private citaM: Observable<CitaMInterface>;
 
   public selectCitaM: CitaMInterface = {};
+  public selectCitaMBorrar: CitaMInterface = {};
 
   citaArray = [];
 
   constructor(
-    private readonly afs: AngularFirestore
+    private readonly afs: AngularFirestore,
+    private db: AngularFirestore
   ) {
     this.CitaMCollection = afs.collection<CitaMInterface>('CitasMedicas',  ref => ref.orderBy('fecha', 'desc'));
     this.getAllCitasMedicas();
@@ -128,5 +130,50 @@ export class CitaService {
       }
     ));
     return this.CitasMedicas;
+  }
+
+// Consultar (CitasMedicas) agendadas odontologos
+  getCitas_odontologos_filter(fechaI: any, fechaF: any) {
+
+    this.CitaMCollection = this.db.collection<CitaMInterface>(
+      'CitasMedicas', ref => ref
+        .where('fecha', '>=', fechaI)
+        .where('fecha', '<=', fechaF)
+        .where('estado', '==', 'confirmada')
+    );
+
+    const citas = this.CitaMCollection.snapshotChanges().pipe(map(
+      actions => {
+        return actions.map(a => {
+          const data = a.payload.doc.data();
+          const id = a.payload.doc.id;
+          return { id, ...data };
+        });
+      }
+    ));
+    return citas;
+  }
+
+  // Consultar (CitasMedicas) agendadas por CI odontologo
+  getCitas_odontologo_filter(ci_odontologo: string, fechaI: any, fechaF: any) {
+
+    this.CitaMCollection = this.db.collection<CitaMInterface>(
+      'CitasMedicas', ref => ref
+        .where('fecha', '>', fechaI)
+        .where('fecha', '<', fechaF)
+        .where('odontologo', '==', ci_odontologo)
+        .where('estado', '==', 'agendada')
+    );
+
+    const citas = this.CitaMCollection.snapshotChanges().pipe(map(
+      actions => {
+        return actions.map(a => {
+          const data = a.payload.doc.data();
+          const id = a.payload.doc.id;
+          return { id, ...data };
+        });
+      }
+    ));
+    return citas;
   }
 }

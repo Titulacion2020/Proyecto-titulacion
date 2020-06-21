@@ -15,7 +15,7 @@
         </div>
       </div>
     </div>
-    <button mat-raised-button color="primary" color="basic" type="button" (click)="fileInput.click()">Seleccionar
+    <button mat-raised-button color="Primary-grey" type="button" (click)="fileInput.click()">Seleccionar
       Imagen</button>
     <br>
     <br>
@@ -27,12 +27,12 @@
       <input matInput placeholder="Cédula" formControlName="cedula" readonly>
     </mat-form-field>
     <mat-form-field class="inputWidth">
-      <input matInput placeholder="Número de teléfono" formControlName="telefono" maxlength="10"
+      <input matInput placeholder="Número de teléfono" formControlName="telefono" maxlength="10" minlength="7"
         (keydown)="check($event)">
     </mat-form-field>
     <div mat-dialog-actions>
       <button mat-raised-button color="primary" [disabled]="this.editBasicInfForm.invalid"
-        type="submit">Guardar</button>
+        type="submit">Guardar</button> &nbsp;
       <button mat-raised-button color="basic" type="button" (click)="close()">Cancelar</button>
     </div>
   </form>

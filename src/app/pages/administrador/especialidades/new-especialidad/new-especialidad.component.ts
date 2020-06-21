@@ -18,6 +18,7 @@ export class NewEspecialidadComponent implements OnInit {
   especialidadForm = new FormGroup({
     id: new FormControl(null),
     nombre: new FormControl('', Validators.required),
+    descripcion: new FormControl('', Validators.required)
   });
 
   constructor(
@@ -63,5 +64,9 @@ export class NewEspecialidadComponent implements OnInit {
 
   msgValidateNombre() {
     return  this.especialidadForm.get('nombre').hasError('required') ? 'Campo obligatorio' : '';
+  }
+
+  msgValidateDescription() {
+    return  this.especialidadForm.get('descripcion').hasError('required') ? 'Campo obligatorio' : '';
   }
 }

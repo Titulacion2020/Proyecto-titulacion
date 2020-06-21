@@ -48,14 +48,22 @@ import { CitasListNowComponent } from './pages/secretaria/citasMedicas/citas-lis
 import { TratamientosListComponent } from './pages/secretaria/tratamientos/tratamientos-list/tratamientos-list.component';
 import { NewTratamientoComponent } from './pages/secretaria/tratamientos/new-tratamiento/new-tratamiento.component';
 import { EditTratamientoComponent } from './pages/secretaria/tratamientos/edit-tratamiento/edit-tratamiento.component';
-import { StringbeautyPipe } from './pipes/pipes/stringbeauty.pipe';
 import { ViewSeguroComponent } from './pages/administrador/seguros/view-seguro/view-seguro.component';
 import { ResponderSolicitudComponent } from './pages/secretaria/solicitudes/responder-solicitud/responder-solicitud.component';
 import { EditarPagoComponent } from './pages/secretaria/pagos/editar-pago/editar-pago.component';
 import { VisualizarPagoComponent } from './pages/secretaria/pagos/visualizar-pago/visualizar-pago.component';
 import { AprobarEliminarComponent } from './pages/secretaria/pacientes/aprobar-eliminar/aprobar-eliminar.component';
 import { AprobarEliminarOdontologoComponent } from './pages/administrador/odontologos/aprobar-eliminar/aprobar-eliminar.component';
+// tslint:disable-next-line: max-line-length
 import { AprobarEliminarTratamientoComponent } from './pages/secretaria/tratamientos/aprobar-eliminar-tratamiento/aprobar-eliminar-tratamiento.component';
+// tslint:disable-next-line: max-line-length
+import { AprobarEliminarEspecialidadComponent } from './pages/administrador/especialidades/aprobar-eliminar/aprobar-eliminar-especialidad/aprobar-eliminar-especialidad.component';
+// tslint:disable-next-line: max-line-length
+import { AprobarEliminarSeguroComponent } from './pages/administrador/seguros/aprobar-eliminar/aprobar-eliminar-seguro/aprobar-eliminar-seguro.component';
+// tslint:disable-next-line: max-line-length
+import { AprobarEliminarCitaMComponent } from './pages/secretaria/citasMedicas/aprobar-eliminar/aprobar-eliminar-cita-m/aprobar-eliminar-cita-m.component';
+import { LocationStrategy, HashLocationStrategy } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -90,7 +98,6 @@ import { AprobarEliminarTratamientoComponent } from './pages/secretaria/tratamie
     TratamientosListComponent,
     NewTratamientoComponent,
     EditTratamientoComponent,
-    StringbeautyPipe,
     ViewSeguroComponent,
     ResponderSolicitudComponent,
     EditarPagoComponent,
@@ -98,6 +105,9 @@ import { AprobarEliminarTratamientoComponent } from './pages/secretaria/tratamie
     AprobarEliminarComponent,
     AprobarEliminarOdontologoComponent,
     AprobarEliminarTratamientoComponent,
+    AprobarEliminarEspecialidadComponent,
+    AprobarEliminarSeguroComponent,
+    AprobarEliminarCitaMComponent,
   ],
   imports: [
     BrowserModule,
@@ -128,6 +138,7 @@ import { AprobarEliminarTratamientoComponent } from './pages/secretaria/tratamie
     MatNativeDateModule,
     MatMenuModule,
     MatProgressSpinnerModule,
+    HttpClientModule
   ],
   entryComponents: [
     EditProfileComponent,
@@ -150,9 +161,13 @@ import { AprobarEliminarTratamientoComponent } from './pages/secretaria/tratamie
     VisualizarPagoComponent,
     AprobarEliminarComponent,
     AprobarEliminarOdontologoComponent,
-    AprobarEliminarTratamientoComponent
+    AprobarEliminarTratamientoComponent,
+    AprobarEliminarEspecialidadComponent,
+    AprobarEliminarSeguroComponent,
+    AprobarEliminarCitaMComponent
   ],
-  providers: [{ provide: MatPaginatorIntl, useClass: PaginatorEspañol}, MatDatepickerModule],
+  providers: [{ provide: MatPaginatorIntl, useClass: PaginatorEspañol}, MatDatepickerModule,
+  {provide: LocationStrategy, useClass: HashLocationStrategy}],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

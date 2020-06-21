@@ -16,20 +16,23 @@
         </div>
         <mat-grid-list cols="2" rowHeight="65">
             <mat-grid-tile>
-                <mat-form-field>
+                <mat-form-field class="inputData">
+                    <input matInput formControlName="hClinica" placeholder="N° Historia Clínica" onkeyup="this.value=this.value.toUpperCase().trim()"
+                   (keyup)=" validarHC()">
+                   <mat-error *ngIf="pacienteForm.invalid">{{getErrorMessageHC()}}</mat-error>
+                </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile>
+                <mat-form-field class="select">
                     <mat-label>Seguro</mat-label>
                     <mat-select formControlName="seguro">
                         <mat-option>--</mat-option>
                         <mat-option *ngFor="let seguro of segService.arraySeguros" value="{{seguro.nombre}}">
                             {{seguro.nombre | titlecase}}
                         </mat-option>
+                        <mat-option value = "sin seguro">Sin seguro</mat-option>
                     </mat-select>
                     <mat-error *ngIf="pacienteForm.get('seguro').hasError('required')">Seleccione el seguro del paciente</mat-error>
-                </mat-form-field>
-            </mat-grid-tile>
-            <mat-grid-tile>
-                <mat-form-field class="inputData">
-                    <input matInput formControlName="hClinica" placeholder="N° Historia Clinica" onkeyup="this.value=this.value.toUpperCase().trim()">
                 </mat-form-field>
             </mat-grid-tile>
             <mat-grid-tile>
@@ -47,6 +50,7 @@
             <mat-grid-tile>
                 <mat-form-field class="inputData">
                     <input matInput formControlName="telefono" placeholder="Teléfono" maxlength="10" (keydown)="check($event)">
+                    <mat-error *ngIf="pacienteForm.invalid">{{getErrorMessageT()}}</mat-error>
                 </mat-form-field>
             </mat-grid-tile>
             <mat-grid-tile>
@@ -59,7 +63,7 @@
         <br>
         <div style="text-align: center;">
             <button mat-raised-button color="primary" type="submit" [disabled]="pacienteForm.invalid">Guardar</button>&nbsp;
-            <button mat-raised-button color="primary" type="button" (click)="close()">Cancelar</button>
+            <button mat-raised-button color="basic" type="button" (click)="close()">Cancelar</button>
         </div>
     </form>
 </div>

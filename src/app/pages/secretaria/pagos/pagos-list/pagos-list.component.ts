@@ -22,7 +22,7 @@ export class PagosListComponent implements OnInit {
 
   dentistList: any[] = [];
   fecha: any;
-  displayedColumns: string[] = ['numero', 'fechaPago', 'cedulaPaciente', 'nombrePaciente', 'seguro','tratamiento', 'valorPago', 'accion'];
+  displayedColumns: string[] = ['numero', 'fechaPago', 'cedulaPaciente', 'nombrePaciente', 'seguro','tratamiento', 'valorPagar','valorPendiente', 'accion'];
   dataSource = new MatTableDataSource();
   @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
 

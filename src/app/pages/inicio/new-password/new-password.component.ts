@@ -11,12 +11,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 })
 export class NewPasswordComponent implements OnInit {
 
-  hideNew: false;
-  hideConfirm: false;
+  hideNew = false;
+  hideConfirm = false;
 
   newPass: string;
   confirmPass: string;
-  mostrarComponente:boolean;
+  mostrarComponente: boolean;
 
   resetPassForm = new FormGroup({
     newpass: new FormControl('', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Z])/)]),
@@ -31,11 +31,10 @@ export class NewPasswordComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-      if(!this.route.snapshot.queryParams.oobCode)
-    {
-      this.router.navigate(['/inicioSesion']);
-    }else{
-      this.mostrarComponente=true;
+    if (!this.route.snapshot.queryParams.oobCode) {
+
+    } else {
+      this.mostrarComponente = true;
     }
   }
 
@@ -43,13 +42,12 @@ export class NewPasswordComponent implements OnInit {
     this.newPass = this.resetPassForm.get('newpass').value;
     this.confirmPass = this.resetPassForm.get('confirmpass').value;
 
-    if ( this.newPass !== this.confirmPass) {
+    if (this.newPass !== this.confirmPass) {
       this.toastr.error('Las contraseñas no coinciden', 'MENSAJE');
     } else {
-      this.toastr.success('Contraseña restablecida exitosamente', 'MENSAJE');
       const code = this.route.snapshot.queryParams.oobCode;
       this.afAuth.auth.confirmPasswordReset(code, this.newPass)
-      .then(() => this.router.navigate(['/inicioSesion']));
+        .then(() => this.toastr.success('Contraseña restablecida exitosamente', 'MENSAJE'));
     }
   }
 
@@ -63,7 +61,7 @@ export class NewPasswordComponent implements OnInit {
 
   msgValidateComfirmPass() {
     return this.resetPassForm.get('confirmpass').hasError('required') ? 'Campo Requerido' :
-            '';
+      '';
   }
 
 }

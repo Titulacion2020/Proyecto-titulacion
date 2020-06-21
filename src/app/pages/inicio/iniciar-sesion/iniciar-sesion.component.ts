@@ -16,7 +16,7 @@ export class IniciarSesionComponent implements OnInit {
   email: string;
   password: string;
   userArray: any;
-  hide: false;
+  hide = false;
   subscription: Subscription;
 
   // Validar Formulario
@@ -54,7 +54,6 @@ export class IniciarSesionComponent implements OnInit {
 
 
         this.router.navigate(['inicio']);
-        //this.router.navigate(['citasRegistradas']);
         this.subscription.unsubscribe();
       }).catch((err) => {
         this.toastr.error('Cédula y/o contraseña incorrectas');
@@ -76,10 +75,10 @@ export class IniciarSesionComponent implements OnInit {
 
   // Funcion: permitir solo numeros en campo cedula
   check(event: KeyboardEvent) {
-    // tslint:disable-next-line: deprecation
-    if (event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
-      event.preventDefault();
-    }
-  }
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/; 
+     if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)){
+       event.preventDefault();
+     }
+   }
 
 }

@@ -5,6 +5,7 @@ import { CitaService } from './../../../../services/cita/cita.service';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatTableDataSource, MatPaginator, MatDialog } from '@angular/material';
 import { AngularFirestore } from '@angular/fire/firestore';
+import { AprobarEliminarCitaMComponent } from './../aprobar-eliminar/aprobar-eliminar-cita-m/aprobar-eliminar-cita-m.component';
 import { EditCitaComponent } from '../edit-cita/edit-cita.component';
 import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
@@ -23,7 +24,7 @@ export class CitasListComponent implements OnInit {
 
   dentistList: any[] = [];
   fecha: any;
-  displayedColumns: string[] = ['fecha', 'hora', 'cipaciente', 'namepaciente' , 'nameodontologo', 'seguro', 'estado', 'accion'];
+  displayedColumns: string[] = ['fecha', 'hora', 'cipaciente', 'namepaciente' , 'nameodontologo','telfPaciente', 'seguro', 'estado', 'accion'];
   dataSourceCitas = new MatTableDataSource();
   @ViewChild(MatPaginator, {static: true}) paginatorCitas: MatPaginator;
 
@@ -108,11 +109,14 @@ export class CitasListComponent implements OnInit {
   }
 
   onDelete(element) {
-    const confirmacion = confirm('¿Estas seguro de eliminar la cita medica?');
-    if (confirmacion) {
-      this.citaMService1.deleteCitaM(element);
-      this.toastr.success('Cita médica eliminada exitosamente', 'MENSAJE');
+    this.openDialogConfirmar();
+    if (element) {
+      this.citaMService1.selectCitaMBorrar = Object.assign({}, element);
     }
+  }
+
+  openDialogConfirmar(): void {
+    this.dialog.open(AprobarEliminarCitaMComponent);
   }
 
 }

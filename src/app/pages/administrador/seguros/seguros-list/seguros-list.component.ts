@@ -1,6 +1,7 @@
 import { EditSeguroComponent } from './../edit-seguro/edit-seguro.component';
 import { ViewSeguroComponent } from './../view-seguro/view-seguro.component';
 import { NewSeguroComponent } from './../new-seguro/new-seguro.component';
+import { AprobarEliminarSeguroComponent } from './../aprobar-eliminar/aprobar-eliminar-seguro/aprobar-eliminar-seguro.component';
 import { SeguroService } from './../../../../services/seguro/seguro.service';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatTableDataSource, MatPaginator, MatDialog } from '@angular/material';
@@ -36,6 +37,10 @@ export class SegurosListComponent implements OnInit {
     this.openDialogNew();
   }
 
+  applyFilter(filterValue: string) {
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
+
   onEdit(element) {
     this.openDialogEdit();
     if (element) {
@@ -50,12 +55,16 @@ export class SegurosListComponent implements OnInit {
     }
   }
 
+
   onDelete(element) {
-    const confirmacion = confirm('¿Estas seguro de eliminar este seguro?');
-    if (confirmacion) {
-      this.seguroService.deleteSeguro(element);
-      this.toastr.success('Registro eliminado exitosamente', 'MENSAJE');
+    this.openDialogConfirmar();
+    if (element) {
+      this.seguroService.seguroSelectedBorrar = Object.assign({}, element);
     }
+  }
+
+  openDialogConfirmar(): void {
+    this.dialog.open(AprobarEliminarSeguroComponent);
   }
 
   openDialogView() {

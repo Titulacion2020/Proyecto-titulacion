@@ -14,6 +14,7 @@ export class SeguroService {
   private SegurosDoc: AngularFirestoreDocument<SeguroInteface>;
   private Seguro: Observable<SeguroInteface[]>;
   public seguroSelected: SeguroInteface = {};
+  public seguroSelectedBorrar: SeguroInteface;
   arraySeguros = [];
 
   constructor(

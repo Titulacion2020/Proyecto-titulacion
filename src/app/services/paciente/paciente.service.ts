@@ -18,7 +18,7 @@ export class PacienteService {
   arrayPacientes = [];
 
   constructor(
-    private readonly afs: AngularFirestore
+    private afs: AngularFirestore
   ) {
     this.PacientCollection = afs.collection<PacienteInterface>('Pacientes',  ref => ref.orderBy('hClinica', 'desc'));
     this.Paciente = this.PacientCollection.valueChanges();
@@ -35,7 +35,6 @@ export class PacienteService {
         };
       });
     });
-
   }
 
   getAllPacientes() {
@@ -49,7 +48,7 @@ export class PacienteService {
     }));
   }
 
-  getPacientesByCedula(cedula:any) { 
+  getPacientesByCedula(cedula: any) {
     this.PacientCollection = this.afs.collection(
       'Paciente', ref => ref.where('cedula', '==', cedula));
     return this.Paciente = this.PacientCollection.snapshotChanges()
@@ -71,10 +70,24 @@ export class PacienteService {
   }
 
   addPaciente(paciente: PacienteInterface) {
-    const id = this.afs.createId();
-    paciente.id= id;
-    return this.PacientCollection.add(paciente);
+    this.PacientCollection = this.afs.collection<PacienteInterface>('Pacientes');
+    return this.PacientCollection.doc(paciente.id).set(paciente);
   }
 
+  getUser_Token(ci: string) {
+    this.PacientCollection = this.afs.collection<PacienteInterface>('Pacientes', ref =>
+      ref.where('cedula', '==', ci)
+    );
+    const paciente = this.PacientCollection.snapshotChanges().pipe(
+      map(actions => {
+        return actions.map(a => {
+          const data = a.payload.doc.data();
+          const id = a.payload.doc.id;
+          return { id, ...data };
+        });
+      })
+    );
+    return paciente;
+  }
 
 }

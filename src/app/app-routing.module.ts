@@ -14,12 +14,14 @@ import { EspecialidadesListComponent } from './pages/administrador/especialidade
 import { CitasListComponent } from './pages/secretaria/citasMedicas/citas-list/citas-list.component';
 import { ReportesComponent } from './pages/administrador/reportes/reportes.component';
 import { ValidarPerfilComponent } from './pages/inicio/validar-perfil/validar-perfil.component';
+import { AuthGuard } from './guards/auth.guard';
 
 
 const routes: Routes = [
   {
     path: 'inicioSesion',
-    component: IniciarSesionComponent
+    component: IniciarSesionComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'restablecerPass',

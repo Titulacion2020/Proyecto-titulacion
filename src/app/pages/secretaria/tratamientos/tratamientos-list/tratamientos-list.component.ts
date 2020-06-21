@@ -8,7 +8,7 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 import { NewTratamientoComponent } from './../new-tratamiento/new-tratamiento.component';
 import { EditTratamientoComponent } from './../edit-tratamiento/edit-tratamiento.component';
 import { AprobarEliminarTratamientoComponent } from './../aprobar-eliminar-tratamiento/aprobar-eliminar-tratamiento.component';
-
+import { OdontologoService } from './../../../../services/odontologo/odontologo.service';
 @Component({
   selector: 'app-tratamientos-list',
   templateUrl: './tratamientos-list.component.html',
@@ -28,11 +28,14 @@ export class TratamientosListComponent implements OnInit {
   constructor(
     public router: Router,
     public authService: AuthService,
+    public odontService: OdontologoService,
     private toastr: ToastrService,
     private tratamientoMService: TratamientoService,
     private dialog: MatDialog,
     private readonly afs: AngularFirestore
   ) { }
+
+  especialidadSelect: any;
 
   ngOnInit() {
 
@@ -45,8 +48,10 @@ export class TratamientosListComponent implements OnInit {
         this.dataSource.data[i]['fecha'] = this.tratamientoMService.formtDate(this.fecha);
       }
     });
-    this.dataSource.paginator = this.paginator;
+  
   }
+
+ 
 
   applyFilter(filterValue: string) {
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -71,13 +76,6 @@ export class TratamientosListComponent implements OnInit {
    this.dialog.open(EditTratamientoComponent);
   }
 
-  /*onDelete(element) {
-    const confirmacion = confirm('¿Estas seguro de eliminar el tratamiento medico?');
-    if (confirmacion) {
-      this.tratamientoMService.deleteTratamientoM(element);
-      this.toastr.success('Tratamiento medico eliminada exitosamente', 'MENSAJE');
-    }
-  }*/
   onDelete(element) {
     this.openDialogConfirmar();
     if (element) {

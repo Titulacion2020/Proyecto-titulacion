@@ -17,6 +17,7 @@ export class PagoService {
   private PagoView: Observable<PagosInterface[]>;
   private PagoReport: Observable<PagosInterface[]>;
   pagoSelected: PagosInterface = {};
+ // pagosDatos: PagosInterface [];
 
   constructor(
     private readonly afs: AngularFirestore
@@ -45,11 +46,10 @@ export class PagoService {
 
 
   addPago(pago: PagosInterface) {
-    return this.PagoCollection.add(pago).then(info =>{
-      this.updatePago(pago);
-      
+    return this.PagoCollection.add(pago).then(info =>{   
     })
   }
+  
   updatePago(pago: PagosInterface) {
       return this.PagoCollection.doc(pago.id).update(pago)
   }

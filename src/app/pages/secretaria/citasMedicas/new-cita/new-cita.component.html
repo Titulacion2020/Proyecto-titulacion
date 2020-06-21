@@ -1,6 +1,6 @@
 <mat-toolbar color="primary">
     <mat-toolbar-row>
-        <span>Nueva Cita Medica</span>
+        <span>Nueva Cita Médica</span>
     </mat-toolbar-row>
 </mat-toolbar>
 <br>
@@ -9,7 +9,7 @@
     <form [formGroup]="CitaMform" (ngSubmit)="guardarCitaMedica(CitaMform.value)">
         <input type="hidden" formControlName="id">
         <mat-form-field class="select">
-            <input type="text" placeholder="Cedula Pacientes" formControlName="cipaciente" aria-label="Pacientes" matInput [matAutocomplete]="auto" (keydown)="check($event)">
+            <input type="text" placeholder="Cédula Pacientes" formControlName="cipaciente" aria-label="Pacientes" matInput [matAutocomplete]="auto" (keydown)="check($event)">
             <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
                 <mat-option *ngFor="let paciente of filteredOptions | async" [value]="paciente">
                     {{paciente['cedula']}}
@@ -17,9 +17,13 @@
             </mat-autocomplete>
             <mat-error *ngIf="CitaMform.invalid">{{getErrorMessageP()}}</mat-error>
         </mat-form-field>
-        <br>
+        &nbsp; &nbsp;
         <mat-form-field class="inputData">
             <input matInput formControlName="namepaciente" placeholder="Nombre del Paciente" class="form-control" readonly>
+        </mat-form-field>
+        <br>
+        <mat-form-field class="inputData">
+            <input matInput formControlName="telfPaciente" placeholder="Teléfono del Paciente" class="form-control" readonly>
         </mat-form-field>
         &nbsp; &nbsp;
         <mat-form-field class="inputData">
@@ -27,7 +31,7 @@
         </mat-form-field>
         <br>
         <mat-form-field class="select">
-            <mat-select formControlName="especialidad" placeholder="especialidad" (ngModelChange)="especialidad($event)">
+            <mat-select formControlName="especialidad" placeholder="Especialidad" (ngModelChange)="especialidad($event)">
                 <mat-option>Seleccione Especialidad</mat-option>
                 <mat-option *ngFor="let especialidad of especialidadSelect" value="{{especialidad}}">
                     {{especialidad}}
@@ -37,7 +41,7 @@
         </mat-form-field>
         &nbsp; &nbsp;
         <mat-form-field class="select">
-            <mat-select formControlName="odontologo" placeholder="odontologo" (ngModelChange)="filterhoursbyOdonto($event)">
+            <mat-select formControlName="odontologo" placeholder="Odontólogo" (ngModelChange)="filterhoursbyOdonto($event)">
                 <mat-option>Seleccione el odontologo</mat-option>
                 <mat-option *ngFor="let odontologo of odontEspecialidad" [value]="odontologo">
                     {{odontologo.nombre}}</mat-option>
@@ -53,7 +57,7 @@
         </mat-form-field>
         &nbsp; &nbsp;
         <mat-form-field class="select">
-            <mat-select formControlName="hora" placeholder="Seleccione la hora" (ngModelChange)="validarCitaMedicaRegistrada($event);">
+            <mat-select formControlName="hora" placeholder="Seleccione la hora" (ngModelChange)="validarCitaMedicaRegistrada($event)">
                 <mat-option *ngFor="let hora of horariobyOdontologoList" value="{{hora}}">
                     {{hora}}
                 </mat-option>
@@ -76,7 +80,7 @@
         </mat-form-field>
         <div mat-dialog-actions>
             <button mat-raised-button color="primary" type="submit" [disabled]="CitaMform.invalid">Guardar</button>&nbsp;
-            <button mat-raised-button color="primary" type="button" (click)="close()">Cancelar</button>
+            <button mat-raised-button color="basic" type="button" (click)="close()">Cancelar</button>
         </div>
     </form>
 </div>

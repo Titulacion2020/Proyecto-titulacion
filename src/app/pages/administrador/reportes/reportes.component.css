@@ -12,6 +12,9 @@
     padding-left: 15%;
   }
 
+  .mat-form-field{
+    width: 20%;
+  }
 
   .button-download{
     background-color:#EC407A;

@@ -11,7 +11,7 @@ export class ReportService {
   constructor() {  }
 
 
-  exportToPdf(header: any[], body: any, pdfFilename: string, title: string, imgurl:any): void {  
+  exportToPdf(header: any[], body: any, pdfFilename: string, title: string): void {  
     
     var img = new Image();
     img.src = "../../assets/logo.jpeg";
@@ -38,13 +38,10 @@ export class ReportService {
       startY: 75,
       body: body,
     });
-	
-    doc.addPage();
-    doc.addImage(imgurl, 'JPEG', 10, 50, 190, 65)
     doc.save(pdfFilename+".pdf");
   }
   
-  exportToPdfPacientes(header: any[], body: any, pdfFilename: string, title: string, paciente: any, imgurl: any, fecha: any): void {    
+  exportToPdfPacientes(header: any[], body: any, pdfFilename: string, title: string, paciente: any, fecha: any): void {    
 
     var img = new Image();
     img.src = "../../assets/logo.jpeg";
@@ -67,9 +64,9 @@ export class ReportService {
     doc.text(93, 60, fecha);     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');  
-    doc.text(10, 75, "Nombre: "+ paciente.nombre);
-    doc.text(100, 75, "Cedula: "+ paciente.cedula);
-    doc.text(10, 85, "Telefono: "+ paciente.telefono);
+    doc.text(10, 75, "Nombre del Paciente: "+ paciente.nombre);
+    doc.text(100, 75, "Cédula: "+ paciente.cedula);
+    doc.text(10, 85, "Teléfono: "+ paciente.telefono);
     doc.text(100, 85, "Email: "+ paciente.email);
 
     doc.autoTable({
@@ -81,10 +78,15 @@ export class ReportService {
       startY: 95,
       body: body,
     });
-     
-	doc.addPage();
-    doc.addImage(imgurl, 'JPEG', 10, 50, 180, 55) 
     doc.save(pdfFilename+".pdf");
+   
+  }
+
+  formatDate(date: Date): string {
+    const day =  date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
 }

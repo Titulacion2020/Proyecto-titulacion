@@ -23,20 +23,24 @@ export class NewPagoComponent implements OnInit {
   valorPatern = /^\d+(?:[.,]\d+)?$/;
   allowedChars = new Set('0123456789'.split('').map(c => c.charCodeAt(0)));
   dateSelected: Date;
-  minDate: Date = new Date();
+  myDate = Date.now();
+  fechaActual = this.pagoMService.formatDate(new Date(this.myDate));
   tratamientosArray = [];
   tratamientosArraySelect = [];
   seguroArraySelect =[];
   tratamientoSelected: TratamientoMInterface= {};
   seguroSelected: any;
-
+  editable: boolean = true;
+  guardarpagoseguro: boolean = true;
+  totalPendiente: number;
+  
   pagoForm = new FormGroup({
     id: new FormControl(null),
     fechaPago: new FormControl('', Validators.required),
     cedulaPaciente: new FormControl('', Validators.required),
-    seguro: new FormControl(''),
+    seguro: new FormControl('', Validators.required),
     tratamiento:  new FormControl('', Validators.required),
-    nombrePaciente:  new FormControl('', Validators.required),
+    nombrePaciente:  new FormControl(''),
     valorPagar: new FormControl('', [Validators.required, Validators.pattern(this.valorPatern)]),
     ultimoValorCancelado: new FormControl(''),
     valorPago: new FormControl(''),
@@ -60,6 +64,7 @@ export class NewPagoComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.pagoForm.get('fechaPago').setValue(this.fechaActual);
     this.procesarTratamientos();
     this.filteredOptions = this.pagoForm.get('cedulaPaciente').valueChanges
     .pipe(
@@ -81,6 +86,7 @@ export class NewPagoComponent implements OnInit {
           cipaciente: item.cipaciente,
           namepaciente: item.namepaciente,
           seguro: item.seguro,
+          sseguro: item.sseguro,
           especialidad: item.especialidad,
           odontologo: item.odontologo,          
           tratamiento: item.tratamiento,
@@ -119,18 +125,18 @@ export class NewPagoComponent implements OnInit {
   }
 
   seguro(val:any){
+    this.tratamientosArraySelect = [];
     if(val !== undefined && val!= null){      
       this.seguroSelected = val.seguro;
-      this.tratamientosArraySelect = this.verificarPagos(val.tratamientos);         
+      this.tratamientosArraySelect = this.verificarPagos(val.tratamientos);  
       this.pagoForm.get('ultimoValorCancelado').setValue(null);
       this.pagoForm.get('valorPendiente').setValue(null);
-      this.pagoForm.get('valorPago').setValue(null);      
-    }
+      this.pagoForm.get('valorPago').setValue(null);
+      this.pagoForm.get('valorPagar').setValue(null);      
+    }     
+    
   }
 
-  /* Verifica que cada tratamiento del seguro
-  seleccionado no tenga todos los pagos  realizados
-  para poder mostrarlo */
   verificarPagos(tratamientos:any){
     let tatamientoValidos = [];
     const seguro = this.seguroSelected;
@@ -138,7 +144,7 @@ export class NewPagoComponent implements OnInit {
     tratamientos.forEach(function (data) {
       pagoservice.getAllPagosByParams(seguro,data.tratamiento,data.cipaciente).subscribe(pago => {
           if(pago!=null &&  pago.length>0){          
-             const totalPagado = pago.reduce((acc, pago) => acc + pago.valorPago, 0);
+             const totalPagado = pago.reduce((acc, pago) => acc + pago.valorPagar, 0);
              const totalAPagar =  data.precio - totalPagado;
              if(totalAPagar>0){
               tatamientoValidos.push(data);
@@ -156,17 +162,29 @@ export class NewPagoComponent implements OnInit {
     this.pagoForm.get('valorPago').setValue(val.precio);
     this.pagoMService.getAllPagosByParams(this.seguroSelected,this.tratamientoSelected.tratamiento,
       this.tratamientoSelected.cipaciente).subscribe(pago => {
-
-        if(pago!=null &&  pago.length>0){          
-          this.pagoForm.get('ultimoValorCancelado').setValue(pago[pago.length - 1].valorPago);
-          const totalPagado = pago.reduce((acc, pago) => acc + pago.valorPago, 0);
-          const totalAPagar =  Number.parseFloat(val.precio) - totalPagado;
-          this.pagoForm.get('valorPendiente').setValue(totalAPagar);
-
+        const segurocubre = this.seguroSelected;
+        if(segurocubre === "No aplica" || segurocubre === "sin seguro" ){
+          this.guardarpagoseguro=true;
+          if(pago!=null &&  pago.length>0){          
+            this.pagoForm.get('ultimoValorCancelado').setValue(pago[0].valorPagar);
+            const totalPagado = pago.reduce((acc, pago) => acc + pago.valorPagar, 0);
+            this.totalPendiente =  Number.parseFloat(val.precio) - totalPagado;
+            this.pagoForm.get('valorPendiente').setValue(this.totalPendiente);
+            this.editable = true;
+          }else{
+            this.pagoForm.get('ultimoValorCancelado').setValue(0);
+            this.pagoForm.get('valorPendiente').setValue(val.precio);    
+          }
+    
         }else{
-          this.pagoForm.get('ultimoValorCancelado').setValue(0);
-          this.pagoForm.get('valorPendiente').setValue(val.precio);    
+        this.guardarpagoseguro=false;
+        this.editable = false;
+        this.pagoForm.get('ultimoValorCancelado').setValue(0);
+        this.pagoForm.get('valorPagar').setValue(val.precio);
+        this.pagoForm.get('valorPendiente').setValue(0);
         }
+
+
     });
   }
 
@@ -195,6 +213,7 @@ export class NewPagoComponent implements OnInit {
     this.pagoForm.get('valorPendiente').setValue(null);
     this.pagoForm.get('valorPago').setValue(null);
     this.pagoForm.get('seguro').setValue(null);
+    this.pagoForm.get('valorPagar').setValue(null);  
     this.pagoForm.get('tratamiento').setValue(null);
   }
 
@@ -202,53 +221,67 @@ export class NewPagoComponent implements OnInit {
     let seguros = [];
     this.tratamientosArraySelect = [];
     this.nulearvalores();
-    
     if(datainfo!== undefined){
       datainfo.forEach(function (data) {
-        if(seguros.length===0){
-          seguros.push({seguro: data.seguro, cedula:data.cipaciente, tratamientos:[data]});
-        }else if(!seguros.find( dato=>dato.seguro === data.seguro)){
-          seguros.push({seguro: data.seguro, cedula:data.cipaciente, tratamientos:[data]});
+        if (data.sseguro === true) {
+          if(seguros.length===0){
+            seguros.push({seguro: 'No aplica', cedula:data.cipaciente, tratamientos:[data]});
+          }else if(!seguros.find( dato=>dato.seguro === 'No aplica')){
+            seguros.push({seguro: data.seguro, cedula:data.cipaciente, tratamientos:[data]});
+          }else{
+            const seguro= seguros.find( dato=>dato.seguro === 'No aplica');
+            seguro.tratamientos.push(data);
+          }
         }else{
-          const seguro= seguros.find( dato=>dato.seguro === data.seguro);
-          seguro.tratamientos.push(data);
+          if(seguros.length===0){
+            seguros.push({seguro: data.seguro, cedula:data.cipaciente, tratamientos:[data]});
+          }else if(!seguros.find( dato=>dato.seguro === data.seguro)){
+            seguros.push({seguro: data.seguro, cedula:data.cipaciente, tratamientos:[data]});
+          }else{
+            const seguro= seguros.find( dato=>dato.seguro === data.seguro);
+            seguro.tratamientos.push(data);
+          }
         }
       });
-    }    
+    } 
+
     return seguros;
   }
  
   savePago(data: any) {
+    const segurocubre = this.seguroSelected;
       let newdata: PagosInterface;
-      const fecha = Date.parse(data.fechaPago);
-      data.fechaPago = fecha;
+      data.fechaPago = this.myDate;
       data.cedulaPaciente = data.cedulaPaciente.cedula;
       data.seguro =  data.seguro.seguro;
       data.tratamiento =  data.tratamiento.tratamiento;
       const valorPagar = Number.parseFloat(data.valorPagar);
       const valorPendiente =  Number.parseFloat(data.valorPendiente);
-      data.valorPago  = valorPagar;
-      delete data.valorPagar;
-      delete data.ultimoValorCancelado;
-      delete data.valorPendiente;
+      data.valorPagar  = valorPagar; 
+
+      if (this.guardarpagoseguro === true) {
+        data.valorPendiente = data.valorPendiente - valorPagar;
+      }
+
       newdata = data;
       
-      if(valorPendiente==0){
-        this.toastr.warning('No hay valores pendientes para este tratamiento', 'MENSAJE');
-      }else if(valorPagar>valorPendiente){
-        this.toastr.warning('El valor a pagar supera el valor pendiente', 'MENSAJE');
-      }else if (newdata) {  
+     
+      if(this.guardarpagoseguro === false && valorPendiente==0){
         this.pagoMService.addPago(newdata);
         this.toastr.success('Registro guardado exitosamente', 'MENSAJE');
         this.close();
+      }else if(valorPagar>valorPendiente){
+        this.toastr.warning('El valor a pagar supera el valor pendiente', 'MENSAJE');
       }else{
-        this.toastr.error('El paciente no se encuentra registrado', 'MENSAJE');
-      }      
+        this.pagoMService.addPago(newdata);
+        this.toastr.success('Registro guardado exitosamente', 'MENSAJE');
+        this.close();
+      }    
   }
 
   errorMessageValor() {
-    return this.pagoForm.get('valorPago').hasError('pattern') ? 'Valor Incorrecto' :
-           this.pagoForm.get('valorPago').hasError('required') ? 'Campo Obligatorio' :
+    return this.pagoForm.get('valorPagar').hasError('pattern') ? 'Valor Incorrecto' :
+           this.pagoForm.get('valorPagar').hasError('required') ? 'Campo Obligatorio' :
             '';
   }
 
@@ -256,11 +289,24 @@ export class NewPagoComponent implements OnInit {
     return this.pagoForm.get('fechaPago').hasError('required') ? 'Fecha Incorrecta' :
            '';
   }
-  check(event: KeyboardEvent) {
-    if (event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
-      event.preventDefault();
-    }
+
+  errorMessageT() {
+    return this.pagoForm.get('tratamiento').hasError('required') ? 'Seleccione el tratamiento' :
+           '';
   }
+
+  errorMessageS() {
+    return this.pagoForm.get('seguro').hasError('required') ? 'Seleccione el seguro' :
+           '';
+  }
+
+
+  check(event: KeyboardEvent) {
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/; 
+     if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)){
+       event.preventDefault();
+     }
+   }
 
   close() {
     this.dialogRef.close();

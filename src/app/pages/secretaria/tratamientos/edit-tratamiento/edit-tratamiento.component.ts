@@ -8,9 +8,11 @@ import { Component, OnInit, Inject, LOCALE_ID } from '@angular/core';
 import { Observable } from 'rxjs';
 import { PacienteInterface } from 'src/app/models/paciente-model';
 import { ToastrService } from 'ngx-toastr';
-import { DateAdapter, MatDialogRef } from '@angular/material';
+import { DateAdapter, MatDialogRef, MatCheckbox } from '@angular/material';
 import { startWith, map } from 'rxjs/operators';
 import { SeguroService } from './../../../../services/seguro/seguro.service';
+import { PagosInterface } from 'src/app/models/pago-model';
+import { PagoService } from 'src/app/services/pago/pago.service';
 
 @Component({
   selector: 'app-edit-tratamiento',
@@ -34,10 +36,11 @@ export class EditTratamientoComponent implements OnInit {
     tratamiento: new FormControl('',  Validators.required),
     precio: new FormControl('', [Validators.required, Validators.pattern(this.valorPatern)]),
     sseguro: new FormControl(null),
-      observacion: new FormControl(''),
+      observacion: new FormControl('', Validators.required),
   });
 
   valorseguro: string;
+  sseguro: boolean = false;
   filteredOptions: Observable<string[]>;
   minDate: Date = new Date();
   specialtiesSelected: string;
@@ -49,10 +52,10 @@ export class EditTratamientoComponent implements OnInit {
   dentistselected: any;
   registeredMedicalTratamientos: TratamientoMInterface[] = [];
 
-    // Lista de pacientes
-    pacientList: any[] = [];
-    // Lista odontologos
-    dentistList: any[] = [];
+  pacientList: any[] = [];
+  dentistList: any[] = [];
+  bloquearValorPagar: boolean = true;
+  todosPagos: PagosInterface[];
 
   constructor(
     private toastr: ToastrService,
@@ -60,6 +63,7 @@ export class EditTratamientoComponent implements OnInit {
     public pactService: PacienteService,
     private dateAdapter: DateAdapter<Date>,
     public seguroService: SeguroService,
+    private pagoService: PagoService,
     private tratamientoMService: TratamientoService,
     public odontService: OdontologoService,
     private dialogRef: MatDialogRef<EditTratamientoComponent>,
@@ -70,12 +74,9 @@ export class EditTratamientoComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.bloquearValorPago();
     this.getPacientandDentistList();
     this.actualizo = false;
-    this.filteredOptions = this.TratamientoMform.get('cipaciente').valueChanges.pipe(
-      startWith(''),
-      map(value =>  value ? this._filter(value) : this.pactService.arrayPacientes.slice())
-    );
     this.especialidadSelect = this.getEspecialidades();
   }
 
@@ -116,9 +117,10 @@ export class EditTratamientoComponent implements OnInit {
   }
 
   setDataTratamientoM() {
-    const pacientefiltered = this.pacientList.find(search => search.cedula === this.tratamientoMService.selectTratamientoM.cipaciente);
+    this.valorseguro = this.tratamientoMService.selectTratamientoM.seguro;
     this.TratamientoMform.get('id').setValue(this.tratamientoMService.selectTratamientoM.id);
-    this.TratamientoMform.get('cipaciente').setValue(pacientefiltered);
+    this.TratamientoMform.get('cipaciente').setValue(this.tratamientoMService.selectTratamientoM.cipaciente);
+    this.TratamientoMform.get('namepaciente').setValue(this.tratamientoMService.selectTratamientoM.namepaciente);
     const parts = this.tratamientoMService.selectTratamientoM.fecha.split('/');
     const newdate = new Date(parts[2], (parts[1] - 1), parts[0]);
     this.TratamientoMform.get('fecha').setValue(newdate);
@@ -129,34 +131,38 @@ export class EditTratamientoComponent implements OnInit {
     this.TratamientoMform.get('tratamiento').setValue(this.tratamientoMService.selectTratamientoM.tratamiento);
     this.TratamientoMform.get('observacion').setValue(this.tratamientoMService.selectTratamientoM.observacion);
     this.TratamientoMform.get('precio').setValue(this.tratamientoMService.selectTratamientoM.precio);
-    this.TratamientoMform.get('sseguro').setValue(this.tratamientoMService.selectTratamientoM.sseguro);
+    this.mostarNOaplica();
   }
 
-  displayFn(subject) {
-    return subject ? subject.cedula : undefined;
-  }
-
-  private _filter(value: any): string[] {
-    const filterValue = value;
-    this.setpacientvalue(value);
-    return this.pactService.arrayPacientes.filter(option => option.cedula.indexOf(filterValue) === 0);
-  }
-
-  setpacientvalue(value: any) {
-    this.TratamientoMform.get('namepaciente').setValue(value.nombre);
-    this.valorseguro = value.seguro;
-    if(!this.TratamientoMform.get('sseguro').value){
-      this.TratamientoMform.get('seguro').setValue(this.valorseguro);
-    }else{
-      this.TratamientoMform.get('seguro').setValue("No aplica");
-    }
+  bloquearValorPago(){
+    this.pagoService.getAllPagos().subscribe(rest => {
+    const cedula = this.tratamientoMService.selectTratamientoM.cipaciente;
+    const tratamiento = this.tratamientoMService.selectTratamientoM.tratamiento;
+    this.todosPagos = rest.filter(datosPagos=>datosPagos.cedulaPaciente === cedula &&
+         datosPagos.tratamiento === tratamiento);
+      if(this.todosPagos.length > 0){
+          this.bloquearValorPagar = false; 
+          this.toastr.warning('Este tratamiento tiene pagos registrados', 'MENSAJE');      
+      } else {
+          this.bloquearValorPagar = true;
+      }
+      }, error => {
+        throw error;
+      });
   }
 
   sinseguro(seguro:any){
     if(!this.TratamientoMform.get('sseguro').value){
-      this.TratamientoMform.get('seguro').setValue(this.valorseguro);
+      this.TratamientoMform.get('seguro').setValue(this.tratamientoMService.selectTratamientoM.seguro);
+      this.sseguro = false;  
     }else{
       this.TratamientoMform.get('seguro').setValue("No aplica");
+      this.sseguro = true;  
+    }
+  }
+  mostarNOaplica(){
+    if (this.tratamientoMService.selectTratamientoM.sseguro === true) {
+      this.TratamientoMform.get('sseguro').setValue(this.tratamientoMService.selectTratamientoM.sseguro);
     }
   }
 
@@ -168,6 +174,7 @@ export class EditTratamientoComponent implements OnInit {
 
 
   especialidad(val: any) {
+    this.mostarNOaplica();
      if (this.actualizo === false) {
       this.odontEspecialidad = [];
       this.specialtiesSelected = val;
@@ -177,12 +184,11 @@ export class EditTratamientoComponent implements OnInit {
         }
       });      
     }
-    const seguro = this.TratamientoMform.get('seguro').value;    
+    const seguro = this.TratamientoMform.get('seguro').value;  
     if(seguro !== "No aplica" && !this.TratamientoMform.get('sseguro').value){
-      
       this.seguroService.getSegurosByNameAndEspecialidad(seguro,val).subscribe(res => {
-       if (Object.keys(res).length === 0) {
-          this.toastr.warning('El seguro del paciente no cubre esta especialidad medica', 'MENSAJE');
+       if (Object.keys(res).length === 0 && seguro !== "sin seguro" && seguro !== "No aplica") {
+        this.toastr.warning('El seguro del paciente no cubre esta especialidad medica', 'MENSAJE');
           return  this.TratamientoMform.get('cipaciente').hasError('required');
         }
       });
@@ -199,49 +205,26 @@ export class EditTratamientoComponent implements OnInit {
   guardarTratamientoMedico(data: TratamientoMInterface) {
     const fecha = Date.parse(data.fecha);
     data.fecha = fecha;
-    // objeto modificado
+ 
     let newdata: TratamientoMInterface;
     newdata = data;
 
-    if (newdata.cipaciente) {
-      if (this.existID_pacientList(newdata.cipaciente) === true) {
-        newdata.cipaciente =  newdata.cipaciente.cedula;
-        newdata.odontologo =  newdata.odontologo.cedula;
-        newdata.nameodontologo = this.dentistselected.nombre;
-        newdata.precio = Number.parseFloat(newdata.precio);
-        this.seguroService.getSegurosByNameAndEspecialidad(newdata.seguro,newdata.especialidad).subscribe(res => {
-          if (Object.keys(res).length === 0 && !this.TratamientoMform.get('sseguro').value) {
-            this.toastr.error('El seguro del paciente no cubre esta especialidad medica', 'MENSAJE');
-          }else{
-            this.tratamientoMService.updateTratamientoM(newdata);
-            this.actualizo = true;          
-            this.toastr.success('Registro actualizado exitosamente', 'MENSAJE');
-            this.close();
-          }
-        });
-      } else {
-        this.toastr.error('El paciente  no se encuentra registrado', 'MENSAJE');
-      }
-    } else {
-      console.log('el no se encuentra registrado');
+    newdata.odontologo =  newdata.odontologo.cedula;
+    newdata.nameodontologo = this.dentistselected.nombre;
+    newdata.seguro = this.valorseguro;
+    newdata.sseguro = this.sseguro;
+    newdata.precio = Number.parseFloat(newdata.precio);
+    this.seguroService.getSegurosByNameAndEspecialidad(newdata.seguro,newdata.especialidad).subscribe(res => {
+    if (Object.keys(res).length === 0 && !this.TratamientoMform.get('sseguro').value && newdata.seguro !== "sin seguro") {
+      this.toastr.error('El seguro del paciente no cubre esta especialidad medica', 'MENSAJE');
+    }else{
+      this.tratamientoMService.updateTratamientoM(newdata);
+      this.actualizo = true;          
+      this.toastr.success('Registro actualizado exitosamente', 'MENSAJE');
+      this.close();
     }
-  }
+  });
 
-  existID_pacientList(cedula: any): boolean {
-
-    let exist = false;
-    if (cedula) {
-      const pacientFiltered = this.pactService.arrayPacientes.find(pacientFilterbycedula => pacientFilterbycedula.cedula === cedula.cedula);
-
-      if (pacientFiltered) {
-        exist = true;
-      } else {
-        exist = false;
-      }
-    } else {
-      exist = false;
-    }
-    return exist;
   }
 
 
@@ -249,13 +232,12 @@ export class EditTratamientoComponent implements OnInit {
     this.dialogRef.close();
   }
 
- // Funcion: permitir solo numeros
  check(event: KeyboardEvent) {
-   var preg = /^([0-9]+\.?[0-9]{0,2})$/; 
-    if (preg.test(event.key) !== true){
-      event.preventDefault();
-    }
-  }
+  var preg = /^([0-9]+\.?[0-9]{0,2})$/; 
+   if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)){
+     event.preventDefault();
+   }
+ }
 
   getErrorMessageP() {
     return  this.TratamientoMform.get('cipaciente').hasError('required') ? 'Seleccione el paciente' : '';
@@ -271,6 +253,17 @@ export class EditTratamientoComponent implements OnInit {
 
   getErrorMessageO() {
     return  this.TratamientoMform.get('odontologo').hasError('required') ? 'Seleccione el odontologo' : '';
+  }
+
+  getErrorMessageOb() {
+    return  this.TratamientoMform.get('observacion').hasError('required') ? 'Campo requrido' : '';
+  }
+
+  getErrorMessageT() {
+    return  this.TratamientoMform.get('tratamiento').hasError('required') ? 'Campo requrido' : '';
+  }
+  getErrorMessageV() {
+    return  this.TratamientoMform.get('precio').hasError('required') ? 'Campo requrido' : '';
   }
 
 }

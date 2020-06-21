@@ -26,10 +26,11 @@ export class OdontologoService {
   arrayOdontologos = [];
 
   constructor(
-    private readonly afs: AngularFirestore,
+    private afs: AngularFirestore,
+    private db: AngularFirestore,
     private storage: AngularFireStorage
   ) {
-    this.OdontCollection = afs.collection<OdontologoInterface>('Odontologos',  ref => ref.orderBy('nombre', 'asc'));
+    this.OdontCollection = afs.collection<OdontologoInterface>('Odontologos', ref => ref.orderBy('nombre', 'asc'));
     this.Odontologo = this.OdontCollection.valueChanges();
     this.Odontologo.subscribe(list => {
       this.arrayOdontologos = list.map(item => {
@@ -47,58 +48,43 @@ export class OdontologoService {
 
   getAllOdontologos() {
     return this.Odontologo = this.OdontCollection.snapshotChanges()
-    .pipe(map( changes => {
-      return changes.map(action => {
-        const data = action.payload.doc.data() as OdontologoInterface;
-        data.id = action.payload.doc.id;
-        return data;
-      });
-    }));
+      .pipe(map(changes => {
+        return changes.map(action => {
+          const data = action.payload.doc.data() as OdontologoInterface;
+          data.id = action.payload.doc.id;
+          return data;
+        });
+      }));
   }
 
-  public addNewOdontologo(odontologo: OdontologoInterface, img?): void {
-    if (img) {
-      this.uploadImage(odontologo, img);
-    } else {
-      const id = this.afs.createId();
-      odontologo.id= id;
-      this.OdontCollection.add(odontologo);
-    }
+  public addNewOdontologo(odontologo: OdontologoInterface) {
+    this.OdontCollection = this.afs.collection<OdontologoInterface>('Odontologos');
+    return this.OdontCollection.doc(odontologo.id).set(odontologo);
   }
 
-  public editOdontologo(odontologo: OdontologoInterface, img?) {
-    if (img) {
-      this.uploadImage(odontologo, img);
-    } else {
-      this.OdontCollection.doc(odontologo.id).update(odontologo);
-    }
-  }
-
-  private uploadImage(odontologo: OdontologoInterface, image) {
-    this.filePath = `ImageOdontProfile/${image.name}`;
-    const fileRef = this.storage.ref(this.filePath);
-    this.storage.upload(this.filePath, image).snapshotChanges()
-      .pipe(
-        finalize(() => {
-          fileRef.getDownloadURL().subscribe(urlImage => {
-            this.downloadURL = urlImage;
-            this.saveOdontologo(odontologo);
-          });
-        })
-      ).subscribe();
-  }
-
-  private saveOdontologo(odontologo: OdontologoInterface) {
-    odontologo.foto = this.downloadURL;
-    if (odontologo.id) {
-      return this.OdontCollection.doc(odontologo.id).update(odontologo);
-    } else {
-      return this.OdontCollection.add(odontologo);
-    }
+  public editOdontologo(odontologo: OdontologoInterface) {
+    return this.OdontCollection.doc(odontologo.id).update(odontologo);
   }
 
   deleteOdontologo(odontologo: OdontologoInterface) {
     return this.OdontCollection.doc(odontologo.id).delete();
+  }
+
+  getUser_Odontologo(ci: string) {
+    this.OdontCollection = this.db.collection<OdontologoInterface>('Odontologos', ref =>
+      ref.where('cedula', '==', ci)
+    );
+
+    const paciente = this.OdontCollection.snapshotChanges().pipe(
+      map(actions => {
+        return actions.map(a => {
+          const data = a.payload.doc.data();
+          const id = a.payload.doc.id;
+          return { id, ...data };
+        });
+      })
+    );
+    return paciente;
   }
 
 }

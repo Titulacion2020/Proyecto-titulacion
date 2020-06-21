@@ -20,7 +20,7 @@ export class CitasListNowComponent implements OnInit {
   fechaPars :any;
   dentistList: any[] = [];
   fecha: any;
-  displayedColumns: string[] = ['fecha', 'hora', 'cipaciente', 'namepaciente' , 'nameodontologo',  'seguro', 'estado', 'accion'];
+  displayedColumns: string[] = ['fecha', 'hora', 'cipaciente', 'namepaciente' , 'telfPaciente', 'nameodontologo', 'seguro', 'estado', 'accion'];
   dataSource = new MatTableDataSource();
   @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
 

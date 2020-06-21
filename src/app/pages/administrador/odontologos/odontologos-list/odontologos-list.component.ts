@@ -7,7 +7,7 @@ import { ToastrService } from 'ngx-toastr';
 import { EditOdontologoComponent } from '../edit-odontologo/edit-odontologo.component';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/services/auth/auth.service';
-import {OdontologoInterface} from 'src/app/models/odontologo-model';
+import { OdontologoInterface } from 'src/app/models/odontologo-model';
 import { CitaMInterface } from './../../../../models/cita-model';
 import { CitaService } from './../../../../services/cita/cita.service';
 import { AprobarEliminarOdontologoComponent } from '../aprobar-eliminar/aprobar-eliminar.component';
@@ -19,10 +19,11 @@ import { AprobarEliminarOdontologoComponent } from '../aprobar-eliminar/aprobar-
 })
 export class OdontologosListComponent implements OnInit {
 
-  displayedColumns: string[] = ['numero', 'foto', 'nombre' , 'cedula', 'especialidad', 'email', 'telefono','diasLaborales', 'jornadaLaboral', 'accion'];
+  displayedColumns: string[] = ['numero', 'foto', 'nombre', 'cedula', 'especialidad',
+    'email', 'telefono', 'diasLaborales', 'jornadaLaboral', 'accion'];
   dataSource = new MatTableDataSource();
-  odontologo : OdontologoInterface;
-  @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
+  odontologo: OdontologoInterface;
+  @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
 
   constructor(
     public router: Router,
@@ -37,19 +38,19 @@ export class OdontologosListComponent implements OnInit {
   ngOnInit() {
 
     this.odontService.getAllOdontologos().subscribe(odontologos => {
-      this.dataSource.data = odontologos
+      this.dataSource.data = odontologos;
       const tam = Object.keys(this.dataSource.data).length;
-      for (let i = 0; i< tam; i++){
-        let element = odontologos[i];
-        let dias = new Array();
+      for (let i = 0; i < tam; i++) {
+        const element = odontologos[i];
+        const dias = new Array();
         const horarios = element.horario;
         const tam1 = Object.keys(horarios).length;
-        for (let i = 0; i<tam1; i++){
+        for (let i = 0; i < tam1; i++) {
           dias.push(horarios[i].dia);
         }
-        this.dataSource.data[i]['diasLaborales']=dias;
+        this.dataSource.data[i]['diasLaborales'] = dias;
       }
-    
+
     });
     this.dataSource.paginator = this.paginator;
   }
@@ -65,25 +66,15 @@ export class OdontologosListComponent implements OnInit {
     }
   }
 
-  onNew() {
-    this.openDialogNew();
-   }
 
   openDialogNew(): void {
-    this.dialog.open(NewOdontologoComponent);
+    this.dialog.open(NewOdontologoComponent, {height:'850px',width:'900px'});
   }
 
+  
   openDialogEdit(): void {
-    this.dialog.open(EditOdontologoComponent);
+    this.dialog.open(EditOdontologoComponent, {height:'850px',width:'900px'});
   }
-
-  /*onDelete(element) {
-    const confirmacion = confirm('¿Estas seguro de eliminar el odontólogo?');
-    if (confirmacion) {
-      this.odontService.deleteOdontologo(element);
-      this.toastr.success('Registro eliminado exitosamente', 'MENSAJE');
-    }
-  }*/
 
   onDelete(element) {
     this.openDialogConfirmar();

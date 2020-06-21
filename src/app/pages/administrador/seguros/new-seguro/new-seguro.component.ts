@@ -16,20 +16,22 @@ import { PacienteService } from './../../../../services/paciente/paciente.servic
 })
 export class NewSeguroComponent implements OnInit {
 
+  // tslint:disable-next-line: max-line-length
   emailPattern: any = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,4}))$/;
 
   seguroForm = new FormGroup({
     id: new FormControl(null),
     nombre: new FormControl('', Validators.required),
-    direccion:new FormControl(''),
-    telefono:new FormControl(''),
-    email:new FormControl('', [Validators.required, Validators.email, Validators.pattern(this.emailPattern)]),
-    sitioweb:new FormControl(''), 
+    direccion: new FormControl('', Validators.required),
+    telefono: new FormControl('', [Validators.required, Validators.minLength(7)]),
+    email: new FormControl('', [Validators.required, Validators.email, Validators.pattern(this.emailPattern)]),
+    especialidades:new FormControl('', Validators.required),
+    sitioweb: new FormControl(''),
   });
-  
+
 
   allowedChars = new Set('0123456789'.split('').map(c => c.charCodeAt(0)));
-  specialtiesSelected:  string[];
+  specialtiesSelected: string[];
 
   constructor(
     public espeService: EspecialidadService,
@@ -47,94 +49,77 @@ export class NewSeguroComponent implements OnInit {
 
   onSaveSeguro(data: SeguroInteface) {
     data.nombre = data.nombre.toLowerCase();
-    data.especialidades = this.specialtiesSelected;
 
     this.validateEmail();
-
-    if(this.specialtiesSelected === undefined || this.specialtiesSelected.length ==0){
-      this.toastr.warning('Debe seleccionar al menos una especialidad', 'MENSAJE');
-    }else if (this.existSeguro(data.nombre) === true) {
-      this.toastr.warning('El seguro ya se encuentra registrado', 'MENSAJE');
-    }else {
-      this.seguroService.addSeguro(data);
-      this.toastr.success('Registro actualizado exitosamente', 'MENSAJE');
-      this.close();
-    }
+    this.validarseguro();
+    this.seguroService.addSeguro(data);
+    this.toastr.success('Registro guardado exitosamente', 'MENSAJE');
+    this.close();
   }
 
-  validateEmail(){
+  validateEmail() {
     const email = this.seguroForm.get('email').value;
-    const existeEmailOdont = this.odonService.arrayOdontologos.find(data=>data.email===email);
-    const existeEmailPacient =  this.pacientService.arrayPacientes.find(paciente => paciente.email === email);
-    const existeEmailSeguro =  this.seguroService.arraySeguros.find(seguro => seguro.email === email);
+    const existeEmailOdont = this.odonService.arrayOdontologos.find(data => data.email === email);
+    const existeEmailPacient = this.pacientService.arrayPacientes.find(paciente => paciente.email === email);
+    const existeEmailSeguro = this.seguroService.arraySeguros.find(seguro => seguro.email === email);
 
-    if(existeEmailOdont){
-      this.seguroForm.get('email').setErrors({repeatEmailOdonto:true})
-      this.toastr.warning('El email escrito pertenece a un odontologo', 'MENSAJE');
-    }else if(existeEmailPacient){
-      this.seguroForm.get('email').setErrors({repeatEmailPaciente:true})
-      this.toastr.warning('El email escrito pertenece a un paciente', 'MENSAJE');
-    }else if(existeEmailSeguro){
-      this.seguroForm.get('email').setErrors({repeatEmailSeguro:true})
-      this.toastr.warning('El email escrito pertenece a un seguro', 'MENSAJE');
-    }   
-  }
-
-  checkEspecialidad(val: any){
-    if(this.specialtiesSelected === undefined){
-      this.specialtiesSelected =[];
+    if (existeEmailOdont || existeEmailPacient || existeEmailSeguro) {
+      this.seguroForm.get('email').setErrors({ repeatEmailOdonto: true });
+      this.toastr.warning('El email ya se encuentra registrado, vuelva a intentar', 'MENSAJE');
     }
-    if(val.checked){
-      this.specialtiesSelected.push(val.source.value);
-    }else{
-      this.specialtiesSelected = this.specialtiesSelected.filter(data =>data !=val.source.value);
-    }    
-    
   }
 
-  check(event: KeyboardEvent) {
-    if (event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
-      event.preventDefault();
+  validarseguro(){
+    const nombre = this.seguroForm.get('nombre').value;
+    const seguroFiltered = this.seguroService.arraySeguros.find(espeFilterbynombre => espeFilterbynombre.nombre === nombre);
+    if (seguroFiltered) {
+      this.seguroForm.get('nombre').setErrors({ repeatseguro: true });
+      this.toastr.warning('El seguro ya encuentra registrado, vuelva a intentar', 'MENSAJE');
     }
   }
 
   especialidad(val: any) {
     this.specialtiesSelected = val;
   }
-  existSeguro(nombre: any): boolean {
-    let exist = false;
-    if (nombre) {
-      const seguroFiltered = this.seguroService.arraySeguros.find(espeFilterbynombre => espeFilterbynombre.nombre === nombre);
-      if (seguroFiltered) {
-        exist = true;
-      } else {
-        exist = false;
-      }
-    } else {
-      exist = false;
-    }
-    return exist;
-  }
 
+  check(event: KeyboardEvent) {
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/; 
+     if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)){
+       event.preventDefault();
+     }
+   }
+
+
+  
   close(): void {
-  this.dialogRef.close();
+    this.dialogRef.close();
   }
 
   msgValidateNombre() {
-    return  this.seguroForm.get('nombre').hasError('required') ? 'Campo obligatorio' : '';
+    return this.seguroForm.get('nombre').hasError('required') ? 'Campo obligatorio' : 
+    this.seguroForm.get('nombre').hasError('repeatseguro') ? 'El seguro ya se encuentra registrado' : '';
   }
 
   msgValidateEmail() {
     return this.seguroForm.get('email').hasError('pattern') ? 'Correo electrónico invalido' :
-    this.seguroForm.get('email').hasError('required') ? 'Campo Requerido' :
-    this.seguroForm.get('email').hasError('repeatEmailOdonto') ? 'El email escrito pertenece a un odontologo' :
-    this.seguroForm.get('email').hasError('repeatEmailPaciente') ? 'El email escrito pertenece a un paciente' :
-    this.seguroForm.get('email').hasError('repeatEmailSeguro') ? 'El email escrito pertenece a un seguro' :
-     '';
+      this.seguroForm.get('email').hasError('required') ? 'Campo Requerido' :
+        this.seguroForm.get('email').hasError('repeatEmailOdonto') ? 'El email ya se encuentra registrado' :
+              '';
   }
 
   msgValidateEspecialidad() {
-    return  this.seguroForm.get('especialidades').hasError('required') ? 'Campo obligatorio' : '';
+    return this.seguroForm.get('especialidades').hasError('required') ? 'Seleccione una especialidad' : '';
+  }
+
+
+  msgValidateTelefono() {
+    return  this.seguroForm.get('telefono').hasError('required') ? 'Campo obligatorio' : 
+    this.seguroForm.get('telefono').hasError('minlength') ? 'El teléfono debe tener de 7 a 10 dígitos':
+    '';
+  }
+
+  msgValidateDireccion() {
+    return this.seguroForm.get('direccion').hasError('required') ? 'Campo obligatorio' : '';
   }
 
 }

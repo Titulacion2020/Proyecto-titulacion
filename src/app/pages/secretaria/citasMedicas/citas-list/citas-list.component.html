@@ -4,12 +4,12 @@
     <br>
     <button mat-raised-button color="primary" (click)="onNew()">
     <mat-icon>note_add</mat-icon>
-    Registrar Cita Medica
+    Registrar Cita Médica
   </button>
     <br>
     <div style="text-align: center;">
         <mat-form-field style="width: 50%;">
-            <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Busqueda de la cita medica">
+            <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Búsqueda de la cita médica">
         </mat-form-field>
         <i class="material-icons">search</i>
     </div>
@@ -28,15 +28,19 @@
                     <td mat-cell *matCellDef="let element"> {{element.hora}} </td>
                 </ng-container>
                 <ng-container matColumnDef="cipaciente">
-                    <th mat-header-cell *matHeaderCellDef> CI Paciente </th>
+                    <th mat-header-cell *matHeaderCellDef> CI. Paciente </th>
                     <td mat-cell *matCellDef="let element"> {{element.cipaciente}} </td>
                 </ng-container>
                 <ng-container matColumnDef="namepaciente">
                     <th mat-header-cell *matHeaderCellDef> Nombre del Paciente </th>
                     <td mat-cell *matCellDef="let element"> {{element.namepaciente}} </td>
                 </ng-container>
+                <ng-container matColumnDef="telfPaciente">
+                    <th mat-header-cell *matHeaderCellDef> Teléfono del Paciente </th>
+                    <td mat-cell *matCellDef="let element"> {{element.telfPaciente}} </td>
+                </ng-container>
                 <ng-container matColumnDef="nameodontologo">
-                    <th mat-header-cell *matHeaderCellDef> Odontologo </th>
+                    <th mat-header-cell *matHeaderCellDef> Odontólogo </th>
                     <td mat-cell *matCellDef="let element"> {{element.nameodontologo }} </td>
                 </ng-container>
                 <ng-container matColumnDef="seguro">

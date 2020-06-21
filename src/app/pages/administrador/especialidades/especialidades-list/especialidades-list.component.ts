@@ -1,4 +1,5 @@
 import { NewEspecialidadComponent } from './../new-especialidad/new-especialidad.component';
+import { AprobarEliminarEspecialidadComponent } from './../aprobar-eliminar/aprobar-eliminar-especialidad/aprobar-eliminar-especialidad.component';
 import { EspecialidadService } from './../../../../services/especialidad/especialidad.service';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatTableDataSource, MatPaginator, MatDialog } from '@angular/material';
@@ -14,7 +15,7 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 })
 export class EspecialidadesListComponent implements OnInit {
 
-  displayedColumns: string[] = ['numero', 'nombre', 'accion'];
+  displayedColumns: string[] = ['numero', 'nombre', 'descripcion', 'accion'];
   dataSource = new MatTableDataSource();
   @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
 
@@ -31,6 +32,9 @@ export class EspecialidadesListComponent implements OnInit {
     this.espeService.getAllEspecialidades().subscribe(especialidad => this.dataSource.data = especialidad);
     this.dataSource.paginator = this.paginator;
   }
+  applyFilter(filterValue: string) {
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
 
   onNew() {
     this.openDialogNew();
@@ -43,12 +47,16 @@ export class EspecialidadesListComponent implements OnInit {
     }
   }
 
+
   onDelete(element) {
-    const confirmacion = confirm('¿Estas seguro de eliminar esta especialidad?');
-    if (confirmacion) {
-      this.espeService.deleteEspecialidad(element);
-      this.toastr.success('Registro eliminado exitosamente', 'MENSAJE');
+    this.openDialogConfirmar();
+    if (element) {
+      this.espeService.espeSelectedBorrar = Object.assign({}, element);
     }
+  }
+
+  openDialogConfirmar(): void {
+    this.dialog.open(AprobarEliminarEspecialidadComponent);
   }
 
   openDialogNew() {

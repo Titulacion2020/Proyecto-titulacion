@@ -12,4 +12,5 @@ export interface OdontologoInterface {
   jornadaLaboral?: string;
   horario?: {};
   rol?: Roles;
+  token?: string;
 }

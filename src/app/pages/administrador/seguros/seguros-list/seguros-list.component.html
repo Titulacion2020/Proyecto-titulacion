@@ -10,6 +10,12 @@
     </button>
     </div>
     <br>
+    <div style="text-align: center;">
+        <mat-form-field style="width: 50%;">
+          <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Búsqueda de Seguro">
+      </mat-form-field>
+      <i class="material-icons" >search</i>
+    </div>
     <br>
     <div class="table-content">
         <div class="table-container mat-elevation-z8">
@@ -35,11 +41,11 @@
                     <td mat-cell *matCellDef="let element"> {{element.email | lowercase}} </td>
                 </ng-container>
                 <ng-container matColumnDef="accion">
-                    <th mat-header-cell *matHeaderCellDef> Accion </th>
+                    <th mat-header-cell *matHeaderCellDef> Acción </th>
                     <td mat-cell *matCellDef="let element">
                         <a href="{{element.sitioweb}}" target="_blank">
                             <button mat-flat-button color="primary">
-                            Web <mat-icon style="color:aliceblue">language</mat-icon>                            
+                            Web <mat-icon style="color:aliceblue">language</mat-icon>
                         </button> </a>&nbsp;
                         <button mat-flat-button color="primary" (click)="onView(element)">
                             Ver

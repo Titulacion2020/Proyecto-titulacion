@@ -34,7 +34,7 @@ export class NewTratamientoComponent implements OnInit {
     tratamiento: new FormControl('',  Validators.required),
     precio: new FormControl('', [Validators.required, Validators.pattern(this.valorPatern)]),
     sseguro: new FormControl(null),
-    observacion: new FormControl(''),
+    observacion: new FormControl('', Validators.required),
   });
 
   filteredOptions: Observable<string[]>;
@@ -45,6 +45,7 @@ export class NewTratamientoComponent implements OnInit {
   odontEspecialidad: any[] = [];
   allHours = [];
   valorseguro : string;
+  sseguro: boolean = false;
   dateSelected: Date;
   dentistselected: any;
   registeredMedicalTratamientos: TratamientoMInterface[] = [];
@@ -66,23 +67,27 @@ export class NewTratamientoComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.especialidadSelect = [];
+  
     this.getRegisteredMedicalTratamientos();
     this.filteredOptions = this.TratamientoMform.get('cipaciente').valueChanges.pipe(
       startWith(''),
       map(value =>  value ? this._filter(value) : this.pactService.arrayPacientes.slice())
     );
-
     this.especialidadSelect = this.getEspecialidades();
+    
+
   }
 
-  getEspecialidades():any[]{
+  getEspecialidades(){
     let especiadidadesArray = [];
     this.odontService.arrayOdontologos.map((odont) => {
-
       if(especiadidadesArray.length ==0 ){
         especiadidadesArray.push(odont.especialidad);
+      
       }else if(!especiadidadesArray.find(val=>val.trim() === odont.especialidad.trim())){
         especiadidadesArray.push(odont.especialidad);
+        
       }
     });
     return especiadidadesArray;
@@ -111,6 +116,7 @@ export class NewTratamientoComponent implements OnInit {
     this.valorseguro = value.seguro;
     if(!this.TratamientoMform.get('sseguro').value){
       this.TratamientoMform.get('seguro').setValue(this.valorseguro);
+     
     }else{
       this.TratamientoMform.get('seguro').setValue("No aplica");
     }    
@@ -135,7 +141,7 @@ export class NewTratamientoComponent implements OnInit {
     if(seguro != "No aplica" ||  !this.TratamientoMform.get('sseguro').value){
 
       this.seguroService.getSegurosByNameAndEspecialidad(seguro,val).subscribe(res => {
-       if (Object.keys(res).length === 0) {
+       if (Object.keys(res).length === 0 && seguro !== "sin seguro") {
           this.toastr.error('El seguro del paciente no cubre esta especialidad medica', 'MENSAJE');
           return  this.TratamientoMform.get('cipaciente').hasError('required');
         }
@@ -149,9 +155,11 @@ export class NewTratamientoComponent implements OnInit {
 
   sinseguro(seguro:any){
     if(!this.TratamientoMform.get('sseguro').value){
-      this.TratamientoMform.get('seguro').setValue(this.valorseguro);      
+      this.TratamientoMform.get('seguro').setValue(this.valorseguro);
+      this.sseguro = false;      
     }else{
-      this.TratamientoMform.get('seguro').setValue("No aplica");
+      this.TratamientoMform.get('seguro').setValue('No aplica');
+      this.sseguro = true;
     }
   }
 
@@ -168,11 +176,13 @@ export class NewTratamientoComponent implements OnInit {
         newdata.cipaciente =  newdata.cipaciente.cedula;
         newdata.odontologo =  newdata.odontologo.cedula;
         newdata.nameodontologo = this.dentistselected.nombre;
+        newdata.seguro = this.valorseguro;
+        newdata.sseguro = this.sseguro;
         newdata.precio = Number.parseFloat(newdata.precio);
          
         this.seguroService.getSegurosByNameAndEspecialidad(newdata.seguro,newdata.especialidad).subscribe(res => {
 
-          if (Object.keys(res).length === 0 && !this.TratamientoMform.get('sseguro').value) {
+          if (Object.keys(res).length === 0 && !this.TratamientoMform.get('sseguro').value && newdata.seguro !== "sin seguro") {
             this.toastr.warning('El seguro del paciente no cubre esta especialidad medica', 'MENSAJE');
           }else{
             this.tratamientoMService.addTratamientoM(newdata);           
@@ -184,9 +194,7 @@ export class NewTratamientoComponent implements OnInit {
       } else {
         this.toastr.error('El paciente  no se encuentra registrado', 'MENSAJE');
       }
-    } else {
-      console.log('el no se encuentra registrado');
-    }
+    } 
   }
 
   existID_pacientList(cedula: any): boolean {
@@ -208,12 +216,12 @@ export class NewTratamientoComponent implements OnInit {
     this.dialogRef.close();
   }
 
- check(event: KeyboardEvent) {
-  var preg = /^([0-9]+\.?[0-9]{0,2})$/; 
-   if (preg.test(event.key) !== true){
-     event.preventDefault();
+  check(event: KeyboardEvent) {
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/; 
+     if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)){
+       event.preventDefault();
+     }
    }
- } 
 
   getErrorMessageP() {
     return  this.TratamientoMform.get('cipaciente').hasError('required') ? 'Seleccione el paciente' : '';
@@ -230,4 +238,16 @@ export class NewTratamientoComponent implements OnInit {
   getErrorMessageO() {
     return  this.TratamientoMform.get('odontologo').hasError('required') ? 'Seleccione el odontologo' : '';
   }
+
+  getErrorMessageOb() {
+    return  this.TratamientoMform.get('observacion').hasError('required') ? 'Campo requrido' : '';
+  }
+
+  getErrorMessageT() {
+    return  this.TratamientoMform.get('tratamiento').hasError('required') ? 'Campo requrido' : '';
+  }
+  getErrorMessageV() {
+    return  this.TratamientoMform.get('precio').hasError('required') ? 'Campo requrido' : '';
+  }
+
 }

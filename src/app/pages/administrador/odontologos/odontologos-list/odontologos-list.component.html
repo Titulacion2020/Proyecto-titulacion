@@ -4,7 +4,7 @@
 <body>
     <br>
     <div class="button-new">
-        <button mat-raised-button color="primary" type="button" (click)="onNew()">
+        <button mat-raised-button color="primary" type="button" (click)="openDialogNew()">
       <mat-icon>note_add</mat-icon>
       Registrar Odontólogo
     </button>
@@ -12,7 +12,7 @@
     <br>
     <div style="text-align: center;">
         <mat-form-field style="width: 50%;">
-            <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Busqueda del Odontologo">
+            <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Búsqueda del Odontólogo">
         </mat-form-field>
         <i class="material-icons">search</i>
     </div>
@@ -55,18 +55,16 @@
                 </ng-container>
                 <ng-container matColumnDef="jornadaLaboral">
                     <th mat-header-cell *matHeaderCellDef> Jornada </th>
-                    <td mat-cell *matCellDef="let element">{{element.jornadaLaboral}}</td>
+                    <td mat-cell *matCellDef="let element">{{element.jornadaLaboral | titlecase}}</td>
                 </ng-container>
                 <ng-container matColumnDef="accion">
                     <th mat-header-cell *matHeaderCellDef> Acción </th>
                     <td mat-cell *matCellDef="let element">
                         <button mat-flat-button class="button-edit" color="primary" type="button" (click)="onEdit(element)">
               Editar
-              <mat-icon>edit</mat-icon>
             </button>&nbsp;
                         <button mat-flat-button class="button-delete" type="button" (click)="onDelete(element)">
               Borrar
-              <mat-icon>delete</mat-icon>
             </button>
                     </td>
                 </ng-container>

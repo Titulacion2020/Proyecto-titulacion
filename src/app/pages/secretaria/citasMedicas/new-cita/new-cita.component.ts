@@ -26,6 +26,7 @@ export class NewCitaComponent implements OnInit {
     namepaciente: new FormControl(''),
     especialidad: new FormControl('', Validators.required),
     cipaciente: new FormControl('',  Validators.required),
+    telfPaciente: new FormControl('',  Validators.required),
     odontologo: new FormControl('',  Validators.required),
     hora: new FormControl('',  Validators.required),
     fecha: new FormControl('',  Validators.required),
@@ -46,7 +47,7 @@ export class NewCitaComponent implements OnInit {
   registeredMedicalAppointments: CitaMInterface[] = [];
   citasMedicasArray: CitaMInterface[] = [];
   citasFiltradas: CitaMInterface[];
-  
+
 
   constructor(
     private toastr: ToastrService,
@@ -63,6 +64,7 @@ export class NewCitaComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.especialidadSelect = [];
     this.getRegisteredMedicalAppointments();
     this.filteredOptions = this.CitaMform.get('cipaciente').valueChanges.pipe(
       startWith(''),
@@ -70,12 +72,12 @@ export class NewCitaComponent implements OnInit {
     );
 
     this.especialidadSelect = this.getEspecialidades();
+
   }
 
   getEspecialidades():any[]{
     let especiadidadesArray = [];
     this.odontService.arrayOdontologos.map((odont) => {
-
       if(especiadidadesArray.length ==0 ){
         especiadidadesArray.push(odont.especialidad);
       }else if(!especiadidadesArray.find(val=>val.trim() === odont.especialidad.trim())){
@@ -98,6 +100,7 @@ export class NewCitaComponent implements OnInit {
   setpacientvalue(value: any) {
     this.CitaMform.get('namepaciente').setValue(value.nombre);
     this.CitaMform.get('seguro').setValue(value.seguro);
+    this.CitaMform.get('telfPaciente').setValue(value.telefono);
   }
 
   especialidad(val: any) {
@@ -212,19 +215,18 @@ export class NewCitaComponent implements OnInit {
     const fechaT = Date.parse(fecha);
     const hora = this.CitaMform.get('hora').value;
 
-   const valores = this.citasFiltradas.find(datosCitas=>datosCitas.cipaciente === ci.cedula && datosCitas.fecha === fechaT && datosCitas.hora === hora); 
-
+   const valores = this.citasFiltradas.find(datosCitas=>datosCitas.cipaciente === ci.cedula && datosCitas.fecha === fechaT && datosCitas.hora === hora);
    if(valores !== undefined){
       this.CitaMform.get('hora').setErrors({repeatHora:true})
-      this.toastr.warning('El paciente ya tiene una cita medica registrada a esa hora', 'MENSAJE');  
+      this.toastr.warning('El paciente ya tiene una cita medica registrada a esa hora', 'MENSAJE');
     }
   }
 
   guardarCitaMedica(data: CitaMInterface) {
-    
+
     const fecha = Date.parse(data.fecha);
-    data.fecha = fecha;   
-  
+    data.fecha = fecha;
+
     let newdata: CitaMInterface;
     newdata = data;
 
@@ -265,10 +267,11 @@ export class NewCitaComponent implements OnInit {
   }
 
   check(event: KeyboardEvent) {
-    if (event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
-      event.preventDefault();
-    }
-  }
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/;
+     if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)){
+       event.preventDefault();
+     }
+   }
 
   getErrorMessageP() {
     return  this.CitaMform.get('cipaciente').hasError('required') ? 'Seleccione el paciente' : '';
@@ -287,8 +290,8 @@ export class NewCitaComponent implements OnInit {
   }
 
   getErrorMessageH() {
-    return  this.CitaMform.get('hora').hasError('required') ? 'Seleccione la hora de la cita': 
-            this.CitaMform.get('hora').hasError('repeatHora') ? 'El paciente ya tiene una cita a esa hora' 
+    return  this.CitaMform.get('hora').hasError('required') ? 'Seleccione la hora de la cita':
+            this.CitaMform.get('hora').hasError('repeatHora') ? 'El paciente ya tiene una cita a esa hora'
     : '';
   }
   getErrorMessageEst() {

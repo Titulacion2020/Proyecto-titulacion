@@ -33,7 +33,7 @@
     <mat-card>
       <form [formGroup]="emailForm">
         <div>
-          <h3>Cambiar Correo</h3>
+          <h3>Cambiar correo electrónico</h3>
           <mat-form-field class="inputWidth">
             <input matInput placeholder="Nuevo Correo" name="email" formControlName="email">
             <mat-error *ngIf="this.emailForm.invalid">{{msgValidateEmail()}}</mat-error>

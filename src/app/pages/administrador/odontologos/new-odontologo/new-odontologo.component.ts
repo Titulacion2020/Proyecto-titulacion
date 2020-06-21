@@ -1,10 +1,11 @@
+import { AngularFirestore } from '@angular/fire/firestore';
+import { AuthService } from './../../../../services/auth/auth.service';
 import { OdontologoInterface } from './../../../../models/odontologo-model';
 import { FormControl, Validators, FormGroup } from '@angular/forms';
 import { EspecialidadService } from './../../../../services/especialidad/especialidad.service';
 import { Component, OnInit, ElementRef, ViewChildren } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { MatDialogRef } from '@angular/material';
-import { Subscription } from 'rxjs';
 import { OdontologoService } from './../../../../services/odontologo/odontologo.service';
 import { PacienteService } from './../../../../services/paciente/paciente.service';
 import { SeguroService } from 'src/app/services/seguro/seguro.service';
@@ -24,13 +25,14 @@ export class NewOdontologoComponent implements OnInit {
 
   allowedChars = new Set('0123456789'.split('').map(c => c.charCodeAt(0)));
   private image: any;
+  file: any;
 
   Odonform = new FormGroup({
     id: new FormControl(null),
     nombre: new FormControl('', Validators.required),
     especialidad: new FormControl('', Validators.required),
     cedula: new FormControl('', [Validators.required, Validators.minLength(10)]),
-    telefono: new FormControl('', Validators.required),
+    telefono: new FormControl('', [Validators.required, Validators.minLength(7)]),
     email: new FormControl('', [Validators.required, Validators.pattern(this.emailPattern)]),
     foto: new FormControl(null),
     jornadaLaboral: new FormControl('', Validators.required),
@@ -43,7 +45,7 @@ export class NewOdontologoComponent implements OnInit {
   });
 
   odont: OdontologoInterface = {
-    id : null,
+    id: null,
     horario: '',
     foto: '',
     telefono: '',
@@ -52,6 +54,7 @@ export class NewOdontologoComponent implements OnInit {
     nombre: '',
     especialidad: '',
     jornadaLaboral: '',
+    token: '',
     rol: {
       odontologo: true
     }
@@ -62,6 +65,9 @@ export class NewOdontologoComponent implements OnInit {
   horaInicioJ: string;
   horaFinJ: string;
   horas: any;
+  imagenextencion = false;
+  email = '';
+  horaJornada = '';
 
   constructor(
     private toastr: ToastrService,
@@ -69,87 +75,84 @@ export class NewOdontologoComponent implements OnInit {
     public odonService: OdontologoService,
     public pacientService: PacienteService,
     public seguroService: SeguroService,
-    private dialogRef: MatDialogRef<NewOdontologoComponent>
+    public userService: AuthService,
+    private dialogRef: MatDialogRef<NewOdontologoComponent>,
+    private db: AngularFirestore
   ) {
     dialogRef.disableClose = true;
   }
 
   ngOnInit() {
-    this.dialogRef.updateSize('60%', '100%');
     this.image = this.imageUrl;
   }
 
-  validateCedula(){
+  validateCedula() {
     const cedula = this.Odonform.get('cedula').value;
-    const existeCedOdont = this.odonService.arrayOdontologos.find(data=>data.cedula===cedula);
-    const existeCedPacient =  this.pacientService.arrayPacientes.find(paciente => paciente.cedula === cedula);
-    if(existeCedOdont){
-      this.Odonform.get('cedula').setErrors({repeatOdonto:true})
-      this.toastr.warning('La cedula escrita pertenece a un odontologo', 'MENSAJE');
-    }else if(existeCedPacient){
-      this.Odonform.get('cedula').setErrors({repeatCedPaciente:true})
-      this.toastr.warning('La cedula escrita pertenece a un paciente', 'MENSAJE');
-    }    
+    const existeCedOdont = this.odonService.arrayOdontologos.find(odontologo => odontologo.cedula === cedula);
+    const existeCedPacient = this.pacientService.arrayPacientes.find(paciente => paciente.cedula === cedula);
+    const existeCedUser = this.userService.arrayUsuarios.find(usuario => usuario.cedula === cedula);
+
+    if (existeCedOdont || existeCedPacient || existeCedUser) {
+      this.Odonform.get('cedula').setErrors({ repeatOdonto: true });
+      this.toastr.warning('El número de cédula ya se encuentra registado, vuelva a intentar', 'MENSAJE');
+    }
   }
 
-  validateEmail(){
-    const email = this.Odonform.get('email').value;
-    const existeEmailOdont = this.odonService.arrayOdontologos.find(data=>data.email===email);
-    const existeEmailPacient =  this.pacientService.arrayPacientes.find(paciente => paciente.email === email);
-    const existeEmailSeguro =  this.seguroService.arraySeguros.find(seguro => seguro.email === email);
-    if(existeEmailOdont){
-      this.Odonform.get('email').setErrors({repeatEmailOdonto:true})
-      this.toastr.warning('El email escrito pertenece a un odontologo', 'MENSAJE');
-    }else if(existeEmailPacient){
-      this.Odonform.get('email').setErrors({repeatEmailPaciente:true})
-      this.toastr.warning('El email escrito pertenece a un paciente', 'MENSAJE');
-    }else if(existeEmailSeguro){
-      this.Odonform.get('email').setErrors({repeatEmailSeguro:true})
-      this.toastr.warning('El email escrito pertenece a un seguro', 'MENSAJE');
-    }   
+  validateEmail() {
+    this.email = this.Odonform.get('email').value;
+    this.email = this.email.toLocaleLowerCase();
+
+    const existeEmailOdont = this.odonService.arrayOdontologos.find(data => data.email === this.email);
+    const existeEmailPacient = this.pacientService.arrayPacientes.find(paciente => paciente.email === this.email);
+    const existeEmailSeguro = this.seguroService.arraySeguros.find(seguro => seguro.email === this.email);
+    const existeEmailUser = this.userService.arrayUsuarios.find(user => user.email === this.email);
+
+    if (existeEmailOdont || existeEmailUser || existeEmailPacient || existeEmailSeguro) {
+      this.Odonform.get('email').setErrors({ repeatEmailOdonto: true });
+      this.toastr.warning('El email ya se encuentra registrado, vuelva a intentar', 'MENSAJE');
+    }
+
   }
 
   uploadFile(event: any) {
-    const reader = new FileReader(); // HTML5 FileReader API
-    this.image = event.target.files[0];
-    reader.readAsDataURL(this.image);
-    reader.onload = () => {
+    if (event.target.files[0]) {
+      const file: File = event.target.files[0];
+      const pattern = /image-*/;
+      if (!file.type.match(pattern)) {
+        this.toastr.error('El formato de la imagen es incorrecto', 'MENSAJE');
+        return;
+      }
+      const reader = new FileReader(); // HTML5 FileReader API
+      this.file = event.target.files[0];
+      reader.readAsDataURL(this.file);
+      reader.onload = () => {
         this.imageUrl = reader.result;
-    };
+      };
+
+    }
   }
 
   saveOdontologo() {
     if (!this.Odonform.get('lunes').value && !this.Odonform.get('martes').value &&
-       !this.Odonform.get('miércoles').value && !this.Odonform.get('jueves').value &&
-       !this.Odonform.get('viernes').value && !this.Odonform.get('sábado').value) {
-        this.toastr.warning('Seleccione los dias de trabajo del Odontólogo', 'MENSAJE');
+      !this.Odonform.get('miércoles').value && !this.Odonform.get('jueves').value &&
+      !this.Odonform.get('viernes').value && !this.Odonform.get('sábado').value) {
+      this.toastr.warning('Seleccione los días de trabajo del Odontólogo', 'MENSAJE');
     } else {
-      this.validateCedula();  
+      this.validateCedula();
       this.validateEmail();
       this.getInfoOdontologo();
       this.odont.email = this.odont.email.toLowerCase();
-      const odontFilteredC = this.odonService.arrayOdontologos.find(
-        odontFilterbycedula => odontFilterbycedula.cedula === this.odont.cedula);
-      const odontFilteredE = this.odonService.arrayOdontologos.find(odontFilterbyemail => odontFilterbyemail.email === this.odont.email);
-      if (odontFilteredC === undefined) {
-        if (odontFilteredE === undefined) {
-          if (this.image === this.imageUrl) {
-            this.odonService.addNewOdontologo(this.odont);
-          } else {
-            this.odonService.addNewOdontologo(this.odont , this.image);
-          }
-          this.toastr.success('Registro guardado exitosamente', 'MENSAJE');
-          this.close();
-        } else {
-          this.toastr.warning('El email ya se encuentra registrado', 'MENSAJE');
-        }
-      } else {
-        this.toastr.warning('El número de cédula ya se encuentra registrado', 'MENSAJE');
-      }
+
+      this.odonService.addNewOdontologo(this.odont);
+
+      this.toastr.success('Registro guardado exitosamente', 'MENSAJE');
+      this.close();
+
     }
   }
 
   getInfoOdontologo() {
+    this.odont.id = this.db.createId();
     this.odont.cedula = this.Odonform.get('cedula').value;
     this.odont.nombre = this.Odonform.get('nombre').value;
     this.odont.email = this.Odonform.get('email').value;
@@ -157,51 +160,56 @@ export class NewOdontologoComponent implements OnInit {
     this.odont.foto = this.Odonform.get('foto').value;
     this.odont.telefono = this.Odonform.get('telefono').value;
     this.odont.jornadaLaboral = this.Odonform.get('jornadaLaboral').value;
-    this.odont.foto = this.image;
+
+    if (this.imageUrl !== this.image) {
+      this.odont.foto = this.imageUrl;
+    } else {
+      this.odont.foto = this.image;
+    }
     this.horario(this.odont.jornadaLaboral);
   }
 
-  horario( jornada) {
+  horario(jornada) {
     const lista = [];
 
     if (jornada === 'Matutina') {
       this.horaInicioJ = '08:00';
       this.horaFinJ = '13:00';
       this.horas = ['08:00', '08:20', '08:40', '09:00',
-                    '09:20', '09:40', '10:00', '10:20',
-                    '10:40', '11:00', '11:20', '11:40',
-                    '12:00', '12:20', '12:40', '13:00'];
+        '09:20', '09:40', '10:00', '10:20',
+        '10:40', '11:00', '11:20', '11:40',
+        '12:00', '12:20', '12:40', '13:00'];
     }
     if (jornada === 'Vespertina') {
       this.horaInicioJ = '13:00';
       this.horaFinJ = '18:00';
       this.horas = ['13:00', '13:20', '13:40', '14:00',
-                    '14:20', '14:40', '15:00', '15:20',
-                    '15:40', '16:00', '16:20', '16:40',
-                    '17:00', '17:20', '17:40', '18:00'];
+        '14:20', '14:40', '15:00', '15:20',
+        '15:40', '16:00', '16:20', '16:40',
+        '17:00', '17:20', '17:40', '18:00'];
 
     }
     if (jornada === 'Tiempo Completo') {
       this.horaInicioJ = '08:00';
       this.horaFinJ = '18:00';
       this.horas = ['08:00', '08:20', '08:40', '09:00',
-                    '09:20', '09:40', '10:00', '10:20',
-                    '10:40', '11:00', '11:20', '11:40',
-                    '12:00', '12:20', '12:40', '13:00',
-                    '14:00', '14:20', '14:40', '15:00',
-                    '15:20', '15:40', '16:00', '16:20',
-                    '16:40', '17:00', '17:20', '17:40',
-                    '18:00'];
+        '09:20', '09:40', '10:00', '10:20',
+        '10:40', '11:00', '11:20', '11:40',
+        '12:00', '12:20', '12:40', '13:00',
+        '14:00', '14:20', '14:40', '15:00',
+        '15:20', '15:40', '16:00', '16:20',
+        '16:40', '17:00', '17:20', '17:40',
+        '18:00'];
 
     }
     if (this.Odonform.get('lunes').value) {
-       const lunes = {
+      const lunes = {
         dia: 'lunes',
         horaInicio: this.horaInicioJ,
         horaFin: this.horaFinJ,
         horas: this.horas,
       };
-       lista.push(lunes);
+      lista.push(lunes);
     }
     if (this.Odonform.get('martes').value) {
       const martes = {
@@ -257,27 +265,39 @@ export class NewOdontologoComponent implements OnInit {
   }
 
   check(event: KeyboardEvent) {
-    // tslint:disable-next-line: deprecation
-    if (event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
+    var preg = /^([0-9]+\.?[0-9]{0,2})$/;
+    if ((preg.test(event.key) !== true) && event.keyCode > 31 && !this.allowedChars.has(event.keyCode)) {
       event.preventDefault();
     }
   }
 
   msgValidateEmail() {
     return this.Odonform.get('email').hasError('pattern') ? 'Correo electrónico invalido' :
-    this.Odonform.get('email').hasError('required') ? 'Campo Requerido' :
-    this.Odonform.get('email').hasError('repeatEmailOdonto') ? 'El email escrito pertenece a un odontologo' :
-    this.Odonform.get('email').hasError('repeatEmailPaciente') ? 'El email escrito pertenece a un paciente' :
-    this.Odonform.get('email').hasError('repeatEmailSeguro') ? 'El email escrito pertenece a un seguro' :
-     '';
+      this.Odonform.get('email').hasError('required') ? 'Campo Requerido' :
+        this.Odonform.get('email').hasError('repeatEmailOdonto') ? 'El email ya se encuentra registrado' :
+          '';
   }
 
   msgValidateCedula() {
-    return  this.Odonform.get('cedula').hasError('required') ? 'Campo obligatorio' :
-    this.Odonform.get('cedula').hasError('minlength') ? 'La cédula debe tener 10 digitos' :
-    this.Odonform.get('cedula').hasError('repeatOdonto') ? 'La cédula escrita pertenece a un odontologo' :
-    this.Odonform.get('cedula').hasError('repeatCedPaciente') ? 'La cédula escrita pertenece a un paciente' :
-'';
+    return this.Odonform.get('cedula').hasError('required') ? 'Campo obligatorio' :
+      this.Odonform.get('cedula').hasError('minlength') ? 'La cédula debe tener 10 digitos' :
+        this.Odonform.get('cedula').hasError('repeatOdonto') ? 'La cédula ya se encuentra registrada' :
+          '';
   }
 
+  getErrorMessageT(){
+    return  this.Odonform.get('telefono').hasError('required') ? 'Campo obligatorio' : 
+    this.Odonform.get('telefono').hasError('minlength') ? 'El número de teléfono debe tener de 7 a 10 dígitos':
+    '';
+  }
+
+  jornadaL(event) {
+    if (event.value === 'Matutina') {
+      this.horaJornada = '08:00 a.m - 13:00 p.m';
+    } else if (event.value === 'Vespertina') {
+      this.horaJornada = '13:00 p.m - 18:00 p.m';
+    } else {
+      this.horaJornada = '08:00 a.m - 18:00 p.m';
+    }
+  }
 }
